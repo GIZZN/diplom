@@ -121,13 +121,6 @@ function Logo({ size = 28 }: { size?: number }) {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-const MOCK_SESSIONS = [
-  { id: 1, role: "Frontend разработчик", date: "Сегодня, 14:32", messages: 24, status: "success" },
-  { id: 2, role: "React Engineer", date: "Вчера, 10:15", messages: 18, status: "success" },
-  { id: 3, role: "Fullstack Developer", date: "12 июн, 09:40", messages: 31, status: "partial" },
-  { id: 4, role: "TypeScript разработчик", date: "10 июн, 16:20", messages: 12, status: "neutral" },
-];
-
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton() {
@@ -352,17 +345,19 @@ export default function DashboardPage() {
           <section className={styles.statsRow} aria-label="Статистика">
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Сессий сегодня</span>
-              <span className={styles.statValue}>2</span>
+              <span className={styles.statValue}>{desktopStats.today}</span>
             </div>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Всего сессий</span>
-              <span className={styles.statValue}>14</span>
+              <span className={styles.statValue}>{desktopStats.total}</span>
             </div>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Успешных ответов</span>
+              <span className={styles.statLabel}>Среднее время ответа</span>
               <span className={styles.statValue}>
-                <span className={styles.statAccent}>78</span>
-                <span className={styles.statUnit}>%</span>
+                {desktopStats.avg_response_ms
+                  ? <><span className={styles.statAccent}>{(desktopStats.avg_response_ms / 1000).toFixed(1)}</span><span className={styles.statUnit}>с</span></>
+                  : <span className={styles.statUnit}>—</span>
+                }
               </span>
             </div>
           </section>
@@ -401,72 +396,13 @@ export default function DashboardPage() {
           <section className={styles.recentSection}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>Последние сессии</h3>
-              <button className={styles.viewAllBtn} type="button">Все сессии</button>
             </div>
-            <div className={styles.sessionsList}>
-              {MOCK_SESSIONS.map((session) => (
-                <div key={session.id} className={styles.sessionItem}>
-                  <div className={styles.sessionLeft}>
-                    <span
-                      className={styles.statusDot}
-                      data-status={session.status}
-                      aria-label={
-                        session.status === "success"
-                          ? "Успешно"
-                          : session.status === "partial"
-                          ? "Частично"
-                          : "Нейтрально"
-                      }
-                    />
-                    <div>
-                      <span className={styles.sessionRole}>{session.role}</span>
-                      <span className={styles.sessionDate}>{session.date}</span>
-                    </div>
-                  </div>
-                  <div className={styles.sessionRight}>
-                    <span className={styles.sessionMessages}>{session.messages} сообщений</span>
-                    <button className={styles.sessionOpenBtn} type="button" aria-label={`Открыть сессию ${session.role}`}>
-                      <IconArrow />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Desktop activity */}
-          {desktopStats.total > 0 && (
-            <section className={styles.desktopSection}>
-              <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>Активность в приложении</h3>
+            {desktopSessions.length === 0 ? (
+              <div className={styles.emptyState}>
+                Сессий пока нет. Запустите приложение и начните практику.
               </div>
-
-              <div className={styles.desktopStatsRow}>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Сессий всего</span>
-                  <span className={styles.statValue}>{desktopStats.total}</span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Сегодня</span>
-                  <span className={styles.statValue}>{desktopStats.today}</span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Среднее время</span>
-                  <span className={styles.statValue}>
-                    {desktopStats.avg_response_ms
-                      ? <>{(desktopStats.avg_response_ms / 1000).toFixed(1)}<span className={styles.statUnit}>с</span></>
-                      : "—"}
-                  </span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Топ модель</span>
-                  <span className={styles.statValue} style={{ fontSize: 13, letterSpacing: 0 }}>
-                    {desktopStats.top_model?.split("/").pop()?.split(":")[0] ?? "—"}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.sessionsList} style={{ marginTop: 12 }}>
+            ) : (
+              <div className={styles.sessionsList}>
                 {desktopSessions.map((s) => (
                   <div key={s.id} className={styles.sessionItem}>
                     <div className={styles.sessionLeft}>
@@ -498,8 +434,8 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
 
           {/* Download card */}
           <section className={styles.downloadCard} aria-label="Скачать приложение">            <div className={styles.downloadIcon} aria-hidden="true">
