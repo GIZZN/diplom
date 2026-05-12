@@ -716,3 +716,36 @@
   border-radius: var(--radius-sm);
   animation: shimmer 1.6s ease-in-out infinite;
 }
+
+/* ─── Desktop activity ────────────────────────────────────────────────────── */
+
+.desktopSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktopStatsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.desktopTypeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .desktopStatsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

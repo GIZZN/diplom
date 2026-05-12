@@ -6,4 +6,9 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
+// Run migrations on first connection
+pool.on("connect", () => {
+  import("./migrate").then(({ runMigrations }) => runMigrations()).catch(console.error);
+});
+
 export default pool;

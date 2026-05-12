@@ -152,6 +152,27 @@ function Skeleton() {
   );
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface DesktopSession {
+  id: number;
+  type: string;
+  question: string | null;
+  answer: string | null;
+  model: string | null;
+  response_time_ms: number | null;
+  tokens_used: number | null;
+  session_id: string | null;
+  created_at: string;
+}
+
+interface DesktopStats {
+  total: number;
+  today: number;
+  avg_response_ms: number | null;
+  top_model: string | null;
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -162,6 +183,8 @@ export default function DashboardPage() {
   const [role, setRole] = useState("Frontend разработчик");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [desktopSessions, setDesktopSessions] = useState<DesktopSession[]>([]);
+  const [desktopStats, setDesktopStats] = useState<DesktopStats>({ total: 0, today: 0, avg_response_ms: null, top_model: null });
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -172,6 +195,27 @@ export default function DashboardPage() {
         } else {
           setUser(data.user);
           setLoading(false);
+          // Load desktop sessions
+          fetch("/api/desktop/sessions?limit=10")
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.sessions) {
+                setDesktopSessions(d.sessions);
+                const today = new Date().toDateString();
+                const todayCount = d.sessions.filter((s: DesktopSession) =>
+                  new Date(s.created_at).toDateString() === today
+                ).length;
+                const withTime = d.sessions.filter((s: DesktopSession) => s.response_time_ms);
+                const avgMs = withTime.length
+                  ? Math.round(withTime.reduce((a: number, s: DesktopSession) => a + (s.response_time_ms ?? 0), 0) / withTime.length)
+                  : null;
+                const modelCounts: Record<string, number> = {};
+                d.sessions.forEach((s: DesktopSession) => { if (s.model) modelCounts[s.model] = (modelCounts[s.model] ?? 0) + 1; });
+                const topModel = Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+                setDesktopStats({ total: d.sessions.length, today: todayCount, avg_response_ms: avgMs, top_model: topModel });
+              }
+            })
+            .catch(() => {});
         }
       })
       .catch(() => router.replace("/auth"));
@@ -390,9 +434,75 @@ export default function DashboardPage() {
             </div>
           </section>
 
+          {/* Desktop activity */}
+          {desktopStats.total > 0 && (
+            <section className={styles.desktopSection}>
+              <div className={styles.sectionHeader}>
+                <h3 className={styles.sectionTitle}>Активность в приложении</h3>
+              </div>
+
+              <div className={styles.desktopStatsRow}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Сессий всего</span>
+                  <span className={styles.statValue}>{desktopStats.total}</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Сегодня</span>
+                  <span className={styles.statValue}>{desktopStats.today}</span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Среднее время</span>
+                  <span className={styles.statValue}>
+                    {desktopStats.avg_response_ms
+                      ? <>{(desktopStats.avg_response_ms / 1000).toFixed(1)}<span className={styles.statUnit}>с</span></>
+                      : "—"}
+                  </span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Топ модель</span>
+                  <span className={styles.statValue} style={{ fontSize: 13, letterSpacing: 0 }}>
+                    {desktopStats.top_model?.split("/").pop()?.split(":")[0] ?? "—"}
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.sessionsList} style={{ marginTop: 12 }}>
+                {desktopSessions.map((s) => (
+                  <div key={s.id} className={styles.sessionItem}>
+                    <div className={styles.sessionLeft}>
+                      <span className={styles.desktopTypeIcon}>
+                        {s.type === "live_answer" && (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                        )}
+                        {s.type === "screen_analysis" && (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                        )}
+                        {s.type === "chat_message" && (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        )}
+                      </span>
+                      <div>
+                        <span className={styles.sessionRole}>
+                          {s.question ? s.question.slice(0, 80) + (s.question.length > 80 ? "…" : "") : "—"}
+                        </span>
+                        <span className={styles.sessionDate}>
+                          {new Date(s.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.sessionRight}>
+                      {s.response_time_ms && (
+                        <span className={styles.sessionMessages}>{(s.response_time_ms / 1000).toFixed(1)}с</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Download card */}
-          <section className={styles.downloadCard} aria-label="Скачать приложение">
-            <div className={styles.downloadIcon} aria-hidden="true">
+          <section className={styles.downloadCard} aria-label="Скачать приложение">            <div className={styles.downloadIcon} aria-hidden="true">
               <IconDownload />
             </div>
             <div className={styles.downloadText}>

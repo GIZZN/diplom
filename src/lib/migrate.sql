@@ -21,3 +21,20 @@ CREATE TABLE IF NOT EXISTS app_tokens (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '10 minutes'
 );
+
+-- Desktop app sessions
+CREATE TABLE IF NOT EXISTS desktop_sessions (
+  id               SERIAL PRIMARY KEY,
+  user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type             VARCHAR(30) NOT NULL,
+  question         TEXT,
+  answer           TEXT,
+  model            VARCHAR(100),
+  response_time_ms INTEGER,
+  tokens_used      INTEGER,
+  session_id       VARCHAR(100),
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS desktop_sessions_user_id_idx ON desktop_sessions (user_id);
+CREATE INDEX IF NOT EXISTS desktop_sessions_created_at_idx ON desktop_sessions (created_at DESC);
