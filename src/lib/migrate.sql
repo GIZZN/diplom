@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS users (
+  id            SERIAL PRIMARY KEY,
+  name          VARCHAR(100) NOT NULL,
+  email         VARCHAR(255) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  plan          VARCHAR(20) NOT NULL DEFAULT 'free',
+  avatar        TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
+
+-- Run this if table already exists:
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+
+-- App auth tokens (for desktop app login flow)
+CREATE TABLE IF NOT EXISTS app_tokens (
+  token       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  status      VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending | approved | used
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '10 minutes'
+);
