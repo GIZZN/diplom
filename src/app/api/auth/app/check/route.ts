@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     if (row.status === "approved") {
       const userResult = await pool.query(
-        "SELECT id, email, name FROM users WHERE id = $1",
+        "SELECT id, email, name, avatar FROM users WHERE id = $1",
         [row.user_id]
       );
       const user = userResult.rows[0];
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
       const jwt = signToken({ userId: user.id, email: user.email });
       return NextResponse.json(
-        { status: "approved", jwt, user: { id: user.id, name: user.name, email: user.email } },
+        { status: "approved", jwt, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } },
         { headers: CORS_HEADERS }
       );
     }

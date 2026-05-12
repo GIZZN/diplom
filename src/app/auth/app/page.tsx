@@ -36,7 +36,7 @@ function AppAuthContent() {
   const token = params.get("token");
 
   const [state, setState] = useState<State>("loading");
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; avatar: string | null } | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -45,8 +45,26 @@ function AppAuthContent() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (!d.user) setState("not-logged-in");
-        else { setUser(d.user); setState("confirm"); }
+        if (!d.user) {
+          setState("not-logged-in");
+        } else {
+          setUser(d.user);
+          // Auto-approve immediately — user is already logged in
+          fetch("/api/auth/app/approve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          })
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.ok || data.error === "Токен недействителен или истёк") {
+                setState("success");
+              } else {
+                setState("confirm");
+              }
+            })
+            .catch(() => setState("confirm"));
+        }
       })
       .catch(() => setState("error"));
   }, [token]);
@@ -127,7 +145,12 @@ function AppAuthContent() {
         </p>
 
         <div className={styles.userRow}>
-          <div className={styles.userAvatar}>{user?.name?.charAt(0).toUpperCase()}</div>
+          <div className={styles.userAvatar}>
+            {user?.avatar
+              ? <img src={user.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : user?.name?.charAt(0).toUpperCase()
+            }
+          </div>
           <div>
             <div className={styles.userName}>{user?.name}</div>
             <div className={styles.userEmail}>{user?.email}</div>
