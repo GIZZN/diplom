@@ -178,6 +178,7 @@ export default function DashboardPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [desktopSessions, setDesktopSessions] = useState<DesktopSession[]>([]);
   const [desktopStats, setDesktopStats] = useState<DesktopStats>({ total: 0, today: 0, avg_response_ms: null, top_model: null });
+  const [sessionFilter, setSessionFilter] = useState<string>("all");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -189,26 +190,32 @@ export default function DashboardPage() {
           setUser(data.user);
           setLoading(false);
           // Load desktop sessions
-          fetch("/api/desktop/sessions?limit=10")
-            .then((r) => r.json())
-            .then((d) => {
-              if (d.sessions) {
-                setDesktopSessions(d.sessions);
-                const today = new Date().toDateString();
-                const todayCount = d.sessions.filter((s: DesktopSession) =>
-                  new Date(s.created_at).toDateString() === today
-                ).length;
-                const withTime = d.sessions.filter((s: DesktopSession) => s.response_time_ms);
-                const avgMs = withTime.length
-                  ? Math.round(withTime.reduce((a: number, s: DesktopSession) => a + (s.response_time_ms ?? 0), 0) / withTime.length)
-                  : null;
-                const modelCounts: Record<string, number> = {};
-                d.sessions.forEach((s: DesktopSession) => { if (s.model) modelCounts[s.model] = (modelCounts[s.model] ?? 0) + 1; });
-                const topModel = Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-                setDesktopStats({ total: d.sessions.length, today: todayCount, avg_response_ms: avgMs, top_model: topModel });
-              }
-            })
-            .catch(() => {});
+          const loadSessions = (type = "all") => {
+            const url = type === "all"
+              ? "/api/desktop/sessions?limit=20"
+              : `/api/desktop/sessions?limit=20&type=${type}`;
+            fetch(url)
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.sessions) {
+                  setDesktopSessions(d.sessions);
+                  const today = new Date().toDateString();
+                  const todayCount = d.sessions.filter((s: DesktopSession) =>
+                    new Date(s.created_at).toDateString() === today
+                  ).length;
+                  const withTime = d.sessions.filter((s: DesktopSession) => s.response_time_ms);
+                  const avgMs = withTime.length
+                    ? Math.round(withTime.reduce((a: number, s: DesktopSession) => a + (s.response_time_ms ?? 0), 0) / withTime.length)
+                    : null;
+                  const modelCounts: Record<string, number> = {};
+                  d.sessions.forEach((s: DesktopSession) => { if (s.model) modelCounts[s.model] = (modelCounts[s.model] ?? 0) + 1; });
+                  const topModel = Object.entries(modelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+                  setDesktopStats({ total: d.sessions.length, today: todayCount, avg_response_ms: avgMs, top_model: topModel });
+                }
+              })
+              .catch(() => {});
+          };
+          loadSessions();
         }
       })
       .catch(() => router.replace("/auth"));
@@ -396,41 +403,75 @@ export default function DashboardPage() {
           <section className={styles.recentSection}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>Последние сессии</h3>
+              <div className={styles.filterRow}>
+                {[
+                  { key: "all", label: "Все" },
+                  { key: "chat_message", label: "Чат" },
+                  { key: "live_answer", label: "Голос" },
+                  { key: "screen_analysis", label: "Скриншот" },
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    className={`${styles.filterBtn} ${sessionFilter === f.key ? styles.filterBtnActive : ""}`}
+                    onClick={() => {
+                      setSessionFilter(f.key);
+                      const url = f.key === "all"
+                        ? "/api/desktop/sessions?limit=20"
+                        : `/api/desktop/sessions?limit=20&type=${f.key}`;
+                      fetch(url).then(r => r.json()).then(d => {
+                        if (d.sessions) setDesktopSessions(d.sessions);
+                      }).catch(() => {});
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
             {desktopSessions.length === 0 ? (
               <div className={styles.emptyState}>
                 Сессий пока нет. Запустите приложение и начните практику.
               </div>
             ) : (
-              <div className={styles.sessionsList}>
+              <div className={styles.sessionsTable}>
+                <div className={styles.sessionsTableHead}>
+                  <span>Тип</span>
+                  <span>Вопрос</span>
+                  <span>Ответ</span>
+                  <span>Модель</span>
+                  <span>Время</span>
+                  <span>Дата</span>
+                </div>
                 {desktopSessions.map((s) => (
-                  <div key={s.id} className={styles.sessionItem}>
-                    <div className={styles.sessionLeft}>
-                      <span className={styles.desktopTypeIcon}>
-                        {s.type === "live_answer" && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-                        )}
-                        {s.type === "screen_analysis" && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                        )}
-                        {s.type === "chat_message" && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        )}
-                      </span>
-                      <div>
-                        <span className={styles.sessionRole}>
-                          {s.question ? s.question.slice(0, 80) + (s.question.length > 80 ? "…" : "") : "—"}
-                        </span>
-                        <span className={styles.sessionDate}>
-                          {new Date(s.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.sessionRight}>
-                      {s.response_time_ms && (
-                        <span className={styles.sessionMessages}>{(s.response_time_ms / 1000).toFixed(1)}с</span>
+                  <div key={s.id} className={styles.sessionsTableRow}>
+                    <span className={styles.desktopTypeIcon}>
+                      {s.type === "live_answer" && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
                       )}
-                    </div>
+                      {s.type === "screen_analysis" && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                      )}
+                      {s.type === "chat_message" && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      )}
+                    </span>
+                    <span className={styles.tableCell} title={s.question ?? ""}>
+                      {s.question ? s.question.slice(0, 80) + (s.question.length > 80 ? "…" : "") : "—"}
+                    </span>
+                    <span className={styles.tableCell} title={s.answer ?? ""}>
+                      {s.answer ? s.answer.slice(0, 100) + (s.answer.length > 100 ? "…" : "") : "—"}
+                    </span>
+                    <span className={styles.tableCellMono}>
+                      {s.model?.split("/").pop()?.split(":")[0] ?? "—"}
+                    </span>
+                    <span className={styles.tableCellMono}>
+                      {s.response_time_ms ? `${(s.response_time_ms / 1000).toFixed(1)}с` : "—"}
+                    </span>
+                    <span className={styles.tableCellMuted}>
+                      {new Date(s.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
                   </div>
                 ))}
               </div>
