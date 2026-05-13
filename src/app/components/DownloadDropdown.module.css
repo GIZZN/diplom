@@ -1,0 +1,91 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.trigger {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 200;
+  min-width: 220px;
+  background: #111315;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  animation: fadeIn 0.12s ease;
+}
+
+.left   { left: 0; }
+.right  { right: 0; }
+.center { left: 50%; transform: translateX(-50%); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* center needs override because transform conflicts */
+.center.dropdown {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.dropdownLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 10px 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.itemIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(28, 221, 164, 0.1);
+  border: 1px solid rgba(28, 221, 164, 0.2);
+  color: #1cdda4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.itemLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #f4f4f5;
+}
+
+.itemSub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}

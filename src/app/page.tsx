@@ -5,6 +5,7 @@ import Image from "next/image";
 import styles from "./page.module.css";
 import Background from "./components/Background";
 import BackgroundPaths from "./bg/BackgroundPaths";
+import DownloadDropdown from "./components/DownloadDropdown";
 
 interface AuthUser {
   name: string;
@@ -81,12 +82,14 @@ function Header() {
           ) : (
             <a href="/auth" className={styles.loginBtn}>Войти</a>
           )}
-          <a href="/auth" className={styles.ctaBtn}>
-            Скачать
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12h14m-5-5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+          <DownloadDropdown align="right" trigger={
+            <span className={styles.ctaBtn}>
+              Скачать
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14m-5-5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          } />
         </div>
       </div>
     </header>
@@ -121,12 +124,14 @@ function Hero() {
         </p>
 
         <div className={styles.heroCtas}>
-          <a href="/auth" className={styles.heroCtaPrimary}>
-            Начать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+          <DownloadDropdown align="center" trigger={
+            <span className={styles.heroCtaPrimary}>
+              Скачать бесплатно
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          } />
           <a href="#how" className={styles.heroCtaSecondary}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <polygon points="6 4 20 12 6 20" fill="currentColor" />
@@ -482,12 +487,14 @@ function FinalCta() {
         </h2>
         <p>Установите за 30 секунд. Первая сессия бесплатно.</p>
         <div className={styles.ctaButtons}>
-          <a href="/auth" className={styles.heroCtaPrimary}>
-            Скачать бесплатно
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+          <DownloadDropdown align="center" trigger={
+            <span className={styles.heroCtaPrimary}>
+              Скачать бесплатно
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          } />
           <a href="#pricing" className={styles.heroCtaSecondary}>Сравнить тарифы</a>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./dashboard.module.css";
+import DownloadDropdown from "../components/DownloadDropdown";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -486,9 +487,9 @@ export default function DashboardPage() {
               <span className={styles.downloadTitle}>Скачать desktop-приложение</span>
               <span className={styles.downloadSub}>Работайте офлайн и получите доступ к расширенным функциям</span>
             </div>
-            <button className={styles.downloadBtn} type="button">
-              Скачать
-            </button>
+            <DownloadDropdown align="right" trigger={
+              <button className={styles.downloadBtn} type="button">Скачать</button>
+            } />
           </section>
         </div>
       </main>
