@@ -1,0 +1,4 @@
+*.exe binary
+*.msi binary
+*.dmg binary
+*.pkg binary
