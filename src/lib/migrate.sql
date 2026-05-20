@@ -4,14 +4,17 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   plan          VARCHAR(20) NOT NULL DEFAULT 'free',
-  avatar        TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
 
--- Run this if table already exists:
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+-- Avatars are stored separately so SELECT * FROM users stays compact
+CREATE TABLE IF NOT EXISTS user_avatars (
+  user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  avatar     TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- App auth tokens (for desktop app login flow)
 CREATE TABLE IF NOT EXISTS app_tokens (

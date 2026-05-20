@@ -28,7 +28,12 @@ export async function POST(req: NextRequest) {
     const base64 = Buffer.from(buffer).toString("base64");
     const dataUrl = `data:${file.type};base64,${base64}`;
 
-    await pool.query("UPDATE users SET avatar = $1 WHERE id = $2", [dataUrl, payload.userId]);
+    await pool.query(
+      `INSERT INTO user_avatars (user_id, avatar, updated_at)
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (user_id) DO UPDATE SET avatar = EXCLUDED.avatar, updated_at = NOW()`,
+      [payload.userId, dataUrl]
+    );
 
     return NextResponse.json({ avatar: dataUrl });
   } catch (err) {
@@ -44,6 +49,6 @@ export async function DELETE(req: NextRequest) {
   const payload = verifyToken(token);
   if (!payload) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
 
-  await pool.query("UPDATE users SET avatar = NULL WHERE id = $1", [payload.userId]);
+  await pool.query("DELETE FROM user_avatars WHERE user_id = $1", [payload.userId]);
   return NextResponse.json({ ok: true });
 }

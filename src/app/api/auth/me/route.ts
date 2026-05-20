@@ -10,7 +10,10 @@ export async function GET(req: NextRequest) {
   if (!payload) return NextResponse.json({ user: null });
 
   const result = await pool.query(
-    "SELECT id, name, email, avatar, created_at FROM users WHERE id = $1",
+    `SELECT u.id, u.name, u.email, a.avatar, u.created_at
+     FROM users u
+     LEFT JOIN user_avatars a ON a.user_id = u.id
+     WHERE u.id = $1`,
     [payload.userId]
   );
 

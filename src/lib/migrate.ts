@@ -14,13 +14,30 @@ export async function runMigrations() {
         email         VARCHAR(255) NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         plan          VARCHAR(20) NOT NULL DEFAULT 'free',
-        avatar        TEXT,
         created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
       CREATE INDEX IF NOT EXISTS users_email_idx ON users (email);
 
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+      CREATE TABLE IF NOT EXISTS user_avatars (
+        user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        avatar     TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+
+      -- Move legacy avatar column data into user_avatars, then drop it
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'avatar'
+        ) THEN
+          INSERT INTO user_avatars (user_id, avatar)
+          SELECT id, avatar FROM users WHERE avatar IS NOT NULL
+          ON CONFLICT (user_id) DO NOTHING;
+          ALTER TABLE users DROP COLUMN avatar;
+        END IF;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS app_tokens (
         token       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
