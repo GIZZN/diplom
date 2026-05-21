@@ -40,7 +40,10 @@ export async function GET(req: NextRequest) {
 
     if (row.status === "approved") {
       const userResult = await pool.query(
-        "SELECT id, email, name, avatar FROM users WHERE id = $1",
+        `SELECT u.id, u.email, u.name, a.avatar
+         FROM users u
+         LEFT JOIN user_avatars a ON a.user_id = u.id
+         WHERE u.id = $1`,
         [row.user_id]
       );
       const user = userResult.rows[0];
