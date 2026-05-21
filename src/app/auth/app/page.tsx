@@ -55,13 +55,10 @@ function AppAuthContent() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
           })
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.ok || data.error === "Токен недействителен или истёк") {
-                setState("success");
-              } else {
-                setState("confirm");
-              }
+            .then(async (r) => {
+              const data = await r.json().catch(() => ({}));
+              if (r.ok) setState("success");
+              else { setError(data.error || "Не удалось подтвердить"); setState("confirm"); }
             })
             .catch(() => setState("confirm"));
         }
@@ -99,7 +96,7 @@ function AppAuthContent() {
           <Logo />
           <h1 className={styles.title}>Войдите в аккаунт</h1>
           <p className={styles.subtitle}>Чтобы авторизовать приложение, сначала войдите на сайте.</p>
-          <a href={`/auth?redirect=/auth/app?token=${token}`} className={styles.btn}>
+          <a href={`/auth?redirect=${encodeURIComponent(`/auth/app?token=${token ?? ""}`)}`} className={styles.btn}>
             Войти
           </a>
         </div>

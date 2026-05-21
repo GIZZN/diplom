@@ -15,7 +15,7 @@ function Logo() {
 
 type Mode = "login" | "register";
 
-export default function AuthForm() {
+export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function AuthForm() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(redirectTo);
     } catch {
       setError("Ошибка соединения с сервером");
     } finally {
