@@ -1,6 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Script from "next/script";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
+          renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 interface Transaction {
   id: string;
@@ -32,22 +48,25 @@ const PLAN_LABEL: Record<string, string> = {
   lifetime: "Навсегда (2000 ⭐)",
 };
 
+type Step = "google" | "otp" | "authed";
+
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false);
-  const [input, setInput] = useState("");
+  const [step, setStep] = useState<Step>("google");
+  const [otp, setOtp] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   async function loadStats() {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/admin/stats");
-      if (res.status === 401) { setAuthed(false); return; }
+      if (res.status === 401) { setStep("google"); return; }
       const data = await res.json();
       setStats(data);
-      setAuthed(true);
+      setStep("authed");
     } catch {
       setError("Ошибка загрузки");
     } finally {
@@ -55,60 +74,107 @@ export default function AdminPage() {
     }
   }
 
-  async function handleLogin() {
+  async function handleGoogleCredential(credential: string) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/login", {
+      const res = await fetch("/api/admin/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: input }),
+        body: JSON.stringify({ credential }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Ошибка входа");
-        setLoading(false);
-        return;
-      }
-      setInput("");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? "Ошибка входа"); return; }
+      setStep("otp");
+    } catch {
+      setError("Ошибка соединения");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: otp }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? "Ошибка"); return; }
+      setOtp("");
       await loadStats();
     } catch {
       setError("Ошибка соединения");
+    } finally {
       setLoading(false);
     }
   }
 
   async function handleLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
-    setAuthed(false);
+    setStep("google");
     setStats(null);
   }
 
   // Cookie is HttpOnly, so we can't read it client-side — just try loading stats once on mount.
   useEffect(() => { loadStats(); }, []);
 
-  if (!authed || !stats) {
+  useEffect(() => {
+    if (step !== "google" || !window.google || !googleBtnRef.current || !GOOGLE_CLIENT_ID) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (resp) => handleGoogleCredential(resp.credential),
+    });
+    window.google.accounts.id.renderButton(googleBtnRef.current, { theme: "filled_black", size: "large", width: 280 });
+  }, [step]);
+
+  if (step === "google") {
+    return (
+      <>
+        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onLoad={() => setStep((s) => s)} />
+        <div style={styles.loginWrap}>
+          <div style={styles.loginCard}>
+            <h1 style={styles.loginTitle}>Admin</h1>
+            <p style={styles.loginSub}>Войдите через Google-аккаунт владельца</p>
+            <div ref={googleBtnRef} style={{ display: "flex", justifyContent: "center" }} />
+            {error && <p style={styles.error}>{error}</p>}
+            {loading && <p style={styles.loadingText}>Проверка…</p>}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (step === "otp") {
     return (
       <div style={styles.loginWrap}>
         <div style={styles.loginCard}>
-          <h1 style={styles.loginTitle}>Admin</h1>
+          <h1 style={styles.loginTitle}>Код подтверждения</h1>
+          <p style={styles.loginSub}>Отправили 6-значный код на почту</p>
           <input
             style={styles.loginInput}
-            type="password"
-            placeholder="Пароль"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+            onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
             autoFocus
           />
           {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.loginBtn} onClick={handleLogin} disabled={loading}>
-            {loading ? "Загрузка…" : "Войти"}
+          <button style={styles.loginBtn} onClick={handleVerifyOtp} disabled={loading}>
+            {loading ? "Проверка…" : "Войти"}
           </button>
         </div>
       </div>
     );
   }
+
+  if (!stats) return null;
 
   const { stars, payments, users } = stats;
   const canWithdraw = stars.balance >= 1000;
@@ -246,6 +312,8 @@ const styles: Record<string, React.CSSProperties> = {
   loginTitle: { color: "#fff", margin: 0, fontSize: 22, fontWeight: 700, textAlign: "center" },
   loginInput: { background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#fff", fontSize: 15, outline: "none" },
   loginBtn: { background: "#fff", color: "#000", border: "none", borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 15, cursor: "pointer" },
+  loginSub: { color: "#777", fontSize: 13, margin: "0 0 4px", textAlign: "center" },
+  loadingText: { color: "#666", fontSize: 13, margin: 0, textAlign: "center" },
   error: { color: "#f87171", fontSize: 13, margin: 0, textAlign: "center" },
 
   page: { minHeight: "100vh", background: "#0a0a0a", color: "#fff", fontFamily: "system-ui, sans-serif", padding: "32px 24px", maxWidth: 900, margin: "0 auto" },

@@ -94,6 +94,15 @@ export async function runMigrations() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS admin_audit_log_created_at_idx ON admin_audit_log (created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS admin_otp_codes (
+        id         SERIAL PRIMARY KEY,
+        code_hash  TEXT NOT NULL,
+        used       BOOLEAN NOT NULL DEFAULT false,
+        attempts   INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
     `);
 
     console.log("✓ Migrations applied");
