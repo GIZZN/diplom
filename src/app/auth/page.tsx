@@ -10,18 +10,28 @@ function safeRedirect(value: string | string[] | undefined): string {
   return value;
 }
 
+const ERROR_MESSAGES: Record<string, string> = {
+  invalid_state: "Сессия устарела, попробуйте ещё раз",
+  google_failed: "Не удалось войти через Google",
+  email_failed: "Не удалось отправить код на почту",
+  server_error: "Ошибка сервера, попробуйте позже",
+  email_not_configured: "Отправка email не настроена",
+};
+
 export default async function AuthPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string }>;
+  searchParams: Promise<{ redirect?: string; step?: string; error?: string }>;
 }) {
   const sp = await searchParams;
   const next = safeRedirect(sp.redirect);
+  const initialStep = sp.step === "otp" ? "otp" : "form";
+  const authError = sp.error ? (ERROR_MESSAGES[sp.error] ?? "Ошибка входа") : "";
 
   const token = (await cookies()).get("token")?.value;
   if (token && verifyToken(token)) {
     redirect(next);
   }
 
-  return <AuthForm redirectTo={next} />;
+  return <AuthForm redirectTo={next} initialStep={initialStep as "form" | "otp"} authError={authError} />;
 }
