@@ -15,6 +15,8 @@ interface User {
   email: string;
   avatar: string | null;
   created_at: string;
+  plan: string;
+  pro_expires_at: string | null;
 }
 
 type NavItem = "dashboard" | "sessions" | "analytics" | "settings" | "help";
@@ -316,7 +318,14 @@ export default function DashboardPage() {
             />
             <div className={styles.userMeta}>
               <span className={styles.userName}>{user?.name}</span>
-              <span className={styles.planBadge}>Free</span>
+              <span className={`${styles.planBadge} ${user?.plan === "pro" ? styles.planBadgePro : ""}`}>
+                {user?.plan === "pro" ? "Pro" : "Free"}
+              </span>
+              {user?.plan === "pro" && user.pro_expires_at && (
+                <span className={styles.planExpiry}>
+                  до {new Date(user.pro_expires_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                </span>
+              )}
               {user?.avatar && (
                 <button className={styles.removeAvatarBtn} onClick={handleAvatarRemove} type="button">
                   Удалить фото

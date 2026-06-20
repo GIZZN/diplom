@@ -385,6 +385,32 @@ function How() {
 }
 
 function Pricing() {
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleBuy(plan: "test" | "monthly" | "lifetime") {
+    setError(null);
+    setLoadingPlan(plan);
+    try {
+      const res = await fetch("/api/payments/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (res.status === 401) {
+        window.location.href = "/auth";
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Ошибка"); return; }
+      window.open(data.url, "_blank");
+    } catch {
+      setError("Ошибка соединения");
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
   return (
     <section className={styles.pricing} id="pricing">
       <div className={styles.pricingBg} aria-hidden="true">
@@ -398,6 +424,10 @@ function Pricing() {
           <span className={styles.muted}>Без сюрпризов.</span>
         </h2>
       </div>
+
+      {error && (
+        <p style={{ textAlign: "center", color: "var(--error, #f87171)", marginBottom: 16 }}>{error}</p>
+      )}
 
       <div className={styles.pricingGrid}>
         <div className={styles.pricingCard}>
@@ -424,10 +454,12 @@ function Pricing() {
             <h3>Pro</h3>
             <span className={styles.planTagPro}>Pro</span>
           </div>
+
           <div className={styles.price}>
-            990 <span>₽ / мес</span>
+            500 <span>⭐ / мес</span>
           </div>
-          <div className={styles.priceSub}>Отмена в один клик</div>
+          <div className={styles.priceSub}>или 2 000 ⭐ навсегда · Оплата через Telegram Stars</div>
+
           <ul className={styles.pricingList}>
             <li>Безлимитные сессии</li>
             <li>GPT-4 / Claude Opus</li>
@@ -436,12 +468,38 @@ function Pricing() {
             <li>Приоритетная поддержка</li>
             <li>Экспорт данных</li>
           </ul>
-          <a href="/auth" className={styles.pricingBtnPro}>
-            Оформить Pro
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+            <button
+              className={styles.pricingBtnPro}
+              onClick={() => handleBuy("monthly")}
+              disabled={loadingPlan !== null}
+              type="button"
+            >
+              {loadingPlan === "monthly" ? "Открываем…" : "500 ⭐ — 30 дней"}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <button
+              className={styles.pricingBtn}
+              onClick={() => handleBuy("lifetime")}
+              disabled={loadingPlan !== null}
+              type="button"
+              style={{ textAlign: "center" }}
+            >
+              {loadingPlan === "lifetime" ? "Открываем…" : "2 000 ⭐ — навсегда"}
+            </button>
+            <button
+              className={styles.pricingBtn}
+              onClick={() => handleBuy("test")}
+              disabled={loadingPlan !== null}
+              type="button"
+              style={{ opacity: 0.5, fontSize: "0.75rem" }}
+            >
+              {loadingPlan === "test" ? "Открываем…" : "1 ⭐ — тест"}
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -1,11 +1,12 @@
-import pool from "./db";
+// Runs all DB migrations idempotently. Called via `npm run prebuild` on every deploy.
+const { Pool } = require("pg");
 
-let migrated = false;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+});
 
-export async function runMigrations() {
-  if (migrated) return;
-  migrated = true;
-
+async function main() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -25,7 +26,6 @@ export async function runMigrations() {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
-      -- Move legacy avatar column data into user_avatars, then drop it
       DO $$
       BEGIN
         IF EXISTS (
@@ -38,6 +38,19 @@ export async function runMigrations() {
           ALTER TABLE users DROP COLUMN avatar;
         END IF;
       END $$;
+
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS token_revoked_before TIMESTAMPTZ;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS pro_expires_at TIMESTAMPTZ;
+
+      CREATE TABLE IF NOT EXISTS payments (
+        id                 SERIAL PRIMARY KEY,
+        user_id            INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        telegram_charge_id TEXT NOT NULL UNIQUE,
+        stars_amount       INTEGER NOT NULL,
+        plan_type          VARCHAR(20) NOT NULL,
+        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS payments_user_id_idx ON payments (user_id);
 
       CREATE TABLE IF NOT EXISTS app_tokens (
         token       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,28 +73,17 @@ export async function runMigrations() {
         created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
 
-      CREATE INDEX IF NOT EXISTS desktop_sessions_user_id_idx
-        ON desktop_sessions (user_id);
-      CREATE INDEX IF NOT EXISTS desktop_sessions_created_at_idx
-        ON desktop_sessions (created_at DESC);
-
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS token_revoked_before TIMESTAMPTZ;
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS pro_expires_at TIMESTAMPTZ;
-
-      CREATE TABLE IF NOT EXISTS payments (
-        id                 SERIAL PRIMARY KEY,
-        user_id            INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        telegram_charge_id TEXT NOT NULL UNIQUE,
-        stars_amount       INTEGER NOT NULL,
-        plan_type          VARCHAR(20) NOT NULL,
-        created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS payments_user_id_idx ON payments (user_id);
+      CREATE INDEX IF NOT EXISTS desktop_sessions_user_id_idx ON desktop_sessions (user_id);
+      CREATE INDEX IF NOT EXISTS desktop_sessions_created_at_idx ON desktop_sessions (created_at DESC);
     `);
 
     console.log("✓ Migrations applied");
   } catch (err) {
     console.error("Migration error:", err);
-    migrated = false; // allow retry on next request
+    process.exit(1);
+  } finally {
+    await pool.end();
   }
 }
+
+main();
