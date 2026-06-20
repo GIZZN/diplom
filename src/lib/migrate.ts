@@ -103,6 +103,8 @@ export async function runMigrations() {
         expires_at TIMESTAMPTZ NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+
+      ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
     `);
 
     console.log("✓ Migrations applied");

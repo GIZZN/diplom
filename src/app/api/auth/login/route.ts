@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
     }
 
     const user = result.rows[0];
+
+    if (!user.password_hash) {
+      return NextResponse.json({ error: "Этот аккаунт привязан к Google. Войдите через Google." }, { status: 401 });
+    }
+
     const valid = await verifyPassword(password, user.password_hash);
 
     if (!valid) {

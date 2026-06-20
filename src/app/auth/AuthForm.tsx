@@ -1,8 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import styles from "./auth.module.css";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
+          renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 function Logo() {
   return (
@@ -22,11 +38,42 @@ export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: s
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [googleReady, setGoogleReady] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   function set(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
     setError("");
   }
+
+  async function handleGoogleCredential(credential: string) {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Не удалось войти через Google"); return; }
+      router.push(redirectTo);
+    } catch {
+      setError("Ошибка соединения с сервером");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!googleReady || !window.google || !googleBtnRef.current || !GOOGLE_CLIENT_ID) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: (resp) => handleGoogleCredential(resp.credential),
+    });
+    window.google.accounts.id.renderButton(googleBtnRef.current, { theme: "outline", size: "large", width: 320 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleReady]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,10 +109,19 @@ export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: s
 
   return (
     <div className={styles.container}>
+      <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onLoad={() => setGoogleReady(true)} />
       <div className={styles.card}>
         <div className={styles.logo}>
           <Logo />
           <span className={styles.logoText}>interview.ai</span>
+        </div>
+
+        <div ref={googleBtnRef} style={{ display: "flex", justifyContent: "center", margin: "4px 0 4px" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0 16px", color: "var(--text-muted, #888)", fontSize: 12 }}>
+          <div style={{ flex: 1, height: 1, background: "currentColor", opacity: 0.2 }} />
+          <span>или</span>
+          <div style={{ flex: 1, height: 1, background: "currentColor", opacity: 0.2 }} />
         </div>
 
         <div className={styles.tabs}>
