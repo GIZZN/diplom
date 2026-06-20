@@ -2,35 +2,56 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./admin.module.css";
 
 interface Transaction {
   id: string;
   date: number;
   amount: number;
-  source?: { user?: { username?: string; first_name?: string }; invoice_payload?: string };
-}
-
-interface Payment {
-  id: number;
-  user_id: number;
-  email: string;
-  name: string;
-  stars_amount: number;
-  plan_type: string;
-  created_at: string;
+  planType: string | null;
+  payer: string;
+  account: { id: number; name: string; email: string } | null;
+  recorded: boolean;
 }
 
 interface Stats {
-  stars: { balance: number; transactions: Transaction[] };
-  payments: Payment[];
+  stars: { balance: number };
+  transactions: Transaction[];
   users: { total_users: number; pro_users: number; new_last_7d: number };
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  test: "Тест (1 ⭐)",
-  monthly: "30 дней (500 ⭐)",
-  lifetime: "Навсегда (2000 ⭐)",
+  test: "Тест",
+  monthly: "30 дней",
+  lifetime: "Навсегда",
 };
+
+function Logo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+      <rect x="0" y="0" width="32" height="32" rx="8" fill="white" />
+      <circle cx="16" cy="16" r="7" fill="black" />
+    </svg>
+  );
+}
+
+function IconLogout() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none">
+      <path d="M5.5 2H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M10 10l3-2.5L10 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 7.5H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconRefresh() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+      <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -62,139 +83,142 @@ export default function AdminPage() {
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
-  if (loading) {
+  if (loading && !stats) {
     return (
-      <div style={styles.page}>
-        <div style={{ color: "#666", paddingTop: 80, textAlign: "center" }}>Загрузка…</div>
+      <div className={styles.page}>
+        <div className={styles.centerState}>Загрузка…</div>
       </div>
     );
   }
 
   if (error || !stats) {
     return (
-      <div style={styles.page}>
-        <p style={{ color: "#f87171" }}>{error || "Нет данных"}</p>
-        <button style={styles.refreshBtn} onClick={loadStats}>Повторить</button>
+      <div className={styles.page}>
+        <div className={styles.centerState}>
+          <span>{error || "Нет данных"}</span>
+          <button className={styles.refreshBtn} onClick={loadStats}>
+            <IconRefresh /> Повторить
+          </button>
+        </div>
       </div>
     );
   }
 
-  const { stars, payments, users } = stats;
+  const { stars, transactions, users } = stats;
   const canWithdraw = stars.balance >= 1000;
+  const unrecorded = transactions.filter((t) => !t.recorded).length;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Admin Panel</h1>
-        <button style={styles.logoutBtn} onClick={handleLogout}>Выйти</button>
+    <div className={styles.page}>
+      <div className={styles.topBar}>
+        <div className={styles.topBarLeft}>
+          <Logo />
+          <span className={styles.logoText}>interview.ai</span>
+          <span className={styles.badge}>Admin</span>
+        </div>
+        <button className={styles.logoutBtn} onClick={handleLogout}>
+          <IconLogout /> Выйти
+        </button>
       </div>
 
-      <div style={styles.row}>
-        <div style={styles.card}>
-          <div style={styles.cardLabel}>Всего пользователей</div>
-          <div style={styles.cardValue}>{users.total_users}</div>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.cardLabel}>Pro-аккаунтов</div>
-          <div style={{ ...styles.cardValue, color: "#a78bfa" }}>{users.pro_users}</div>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.cardLabel}>Новых за 7 дней</div>
-          <div style={styles.cardValue}>{users.new_last_7d}</div>
-        </div>
-        <div style={styles.card}>
-          <div style={styles.cardLabel}>Баланс Stars</div>
-          <div style={{ ...styles.cardValue, color: "#fbbf24" }}>⭐ {stars.balance}</div>
-        </div>
-      </div>
-
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Кошелёк Stars</h2>
-        <div style={styles.walletCard}>
-          <div>
-            <div style={styles.walletBalance}>⭐ {stars.balance}</div>
-            <div style={styles.walletSub}>
-              {canWithdraw ? "Можно вывести на Fragment" : `Нужно ещё ${1000 - stars.balance} ⭐`}
-            </div>
+      <div className={styles.content}>
+        <div className={styles.statsRow}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Всего пользователей</span>
+            <span className={styles.statValue}>{users.total_users}</span>
           </div>
-          <a
-            href="https://fragment.com/stars"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ ...styles.withdrawBtn, opacity: canWithdraw ? 1 : 0.45, pointerEvents: canWithdraw ? "auto" : "none" }}
-          >
-            Вывести на Fragment →
-          </a>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Pro-аккаунтов</span>
+            <span className={`${styles.statValue} ${styles.statValuePro}`}>{users.pro_users}</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Новых за 7 дней</span>
+            <span className={styles.statValue}>{users.new_last_7d}</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Баланс Stars</span>
+            <span className={`${styles.statValue} ${styles.statValueStars}`}>⭐ {stars.balance}</span>
+          </div>
         </div>
-        <p style={styles.hint}>Fragment конвертирует Stars → TON. Минимум: 1000 ⭐ ≈ $9.</p>
-      </div>
 
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Транзакции Telegram ({stars.transactions.length})</h2>
-        {stars.transactions.length === 0 ? <div style={styles.empty}>Нет транзакций</div> : (
-          <div style={styles.table}>
-            <div style={{ ...styles.tableRow, ...styles.tableHead }}>
-              <span>Дата</span><span>Сумма</span><span>От кого</span><span>Тариф</span>
-            </div>
-            {stars.transactions.map((tx) => (
-              <div key={tx.id} style={styles.tableRow}>
-                <span style={styles.muted}>{new Date(tx.date * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                <span style={{ color: "#fbbf24", fontWeight: 600 }}>⭐ {tx.amount}</span>
-                <span>{tx.source?.user?.username ? `@${tx.source.user.username}` : tx.source?.user?.first_name ?? "—"}</span>
-                <span style={styles.muted}>{tx.source?.invoice_payload ? PLAN_LABEL[tx.source.invoice_payload.split(":")[1]] ?? tx.source.invoice_payload : "—"}</span>
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>Кошелёк Stars</span>
+          </div>
+          <div className={styles.walletCard}>
+            <div>
+              <div className={styles.walletBalance}>⭐ {stars.balance}</div>
+              <div className={styles.walletSub}>
+                {canWithdraw ? "Можно вывести на Fragment" : `Нужно ещё ${1000 - stars.balance} ⭐ для вывода`}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Платежи в БД ({payments.length})</h2>
-        {payments.length === 0 ? <div style={styles.empty}>Нет платежей в БД</div> : (
-          <div style={styles.table}>
-            <div style={{ ...styles.tableRow, ...styles.tableHead }}>
-              <span>Дата</span><span>Пользователь</span><span>Тариф</span><span>⭐</span>
             </div>
-            {payments.map((p) => (
-              <div key={p.id} style={styles.tableRow}>
-                <span style={styles.muted}>{new Date(p.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                <span title={p.email}>{p.name ?? p.email}</span>
-                <span>{PLAN_LABEL[p.plan_type] ?? p.plan_type}</span>
-                <span style={{ color: "#fbbf24" }}>⭐ {p.stars_amount}</span>
-              </div>
-            ))}
+            <a
+              href="https://fragment.com/stars"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.withdrawBtn} ${!canWithdraw ? styles.withdrawBtnDisabled : ""}`}
+            >
+              Вывести на Fragment →
+            </a>
           </div>
-        )}
-      </div>
+          <p className={styles.hint}>Fragment конвертирует Stars → TON. Минимум для вывода: 1000 ⭐ ≈ $9.</p>
+        </div>
 
-      <div style={styles.footer}>
-        <button style={styles.refreshBtn} onClick={loadStats} disabled={loading}>↻ Обновить</button>
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <span className={styles.sectionTitle}>Платежи</span>
+              <span className={styles.sectionCount}> · {transactions.length}</span>
+              {unrecorded > 0 && (
+                <span className={styles.sectionCount} style={{ color: "#f59e0b" }}>
+                  {" "}· {unrecorded} не записано в БД
+                </span>
+              )}
+            </div>
+            <button className={styles.refreshBtn} onClick={loadStats} disabled={loading}>
+              <IconRefresh /> {loading ? "Обновление…" : "Обновить"}
+            </button>
+          </div>
+
+          {transactions.length === 0 ? (
+            <div className={styles.empty}>Платежей пока нет</div>
+          ) : (
+            <div className={styles.table}>
+              <div className={styles.tableHead}>
+                <span>Дата</span>
+                <span>Оплатил (Telegram)</span>
+                <span>Аккаунт на сайте</span>
+                <span>Тариф</span>
+                <span>⭐</span>
+                <span>Статус</span>
+              </div>
+              {transactions.map((t) => (
+                <div key={t.id} className={styles.row}>
+                  <span className={styles.cellDate}>
+                    {new Date(t.date * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <span className={styles.cellPayer}>{t.payer}</span>
+                  {t.account ? (
+                    <div className={styles.cellAccount}>
+                      <span className={styles.cellAccountName}>{t.account.name}</span>
+                      <span className={styles.cellAccountEmail}>{t.account.email}</span>
+                    </div>
+                  ) : (
+                    <span className={styles.cellAccountMissing}>аккаунт не найден</span>
+                  )}
+                  <span className={styles.cellPlan}>{t.planType ? PLAN_LABEL[t.planType] ?? t.planType : "—"}</span>
+                  <span className={styles.cellStars}>⭐ {t.amount}</span>
+                  {t.recorded ? (
+                    <span className={styles.statusOk}>✓ записано</span>
+                  ) : (
+                    <span className={styles.statusWarn}>⚠ нет в БД</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: "100vh", background: "#0a0a0a", color: "#fff", fontFamily: "system-ui, sans-serif", padding: "32px 24px", maxWidth: 900, margin: "0 auto" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 },
-  title: { fontSize: 24, fontWeight: 700, margin: 0 },
-  logoutBtn: { background: "none", border: "1px solid #333", color: "#888", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 13 },
-  row: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 },
-  card: { background: "#111", border: "1px solid #222", borderRadius: 10, padding: "16px 20px" },
-  cardLabel: { fontSize: 12, color: "#666", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" },
-  cardValue: { fontSize: 26, fontWeight: 700, color: "#fff" },
-  section: { marginBottom: 32 },
-  sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 12, color: "#ccc" },
-  walletCard: { background: "#111", border: "1px solid #333", borderRadius: 12, padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  walletBalance: { fontSize: 36, fontWeight: 700, color: "#fbbf24" },
-  walletSub: { fontSize: 13, color: "#666", marginTop: 4 },
-  withdrawBtn: { background: "#fbbf24", color: "#000", borderRadius: 8, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", display: "inline-block" },
-  hint: { fontSize: 12, color: "#555", marginTop: 10 },
-  table: { background: "#111", border: "1px solid #222", borderRadius: 10, overflow: "hidden" },
-  tableHead: { background: "#161616", color: "#555", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" },
-  tableRow: { display: "grid", gridTemplateColumns: "140px 80px 1fr 1fr", gap: 16, padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: 13, alignItems: "center" },
-  muted: { color: "#666" },
-  empty: { color: "#555", padding: "20px 0", textAlign: "center", fontSize: 14 },
-  footer: { marginTop: 16, display: "flex", justifyContent: "flex-end" },
-  refreshBtn: { background: "#1a1a1a", border: "1px solid #333", color: "#ccc", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 13 },
-};
