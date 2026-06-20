@@ -33,22 +33,21 @@ const PLAN_LABEL: Record<string, string> = {
 };
 
 export default function AdminPage() {
-  const [secret, setSecret] = useState("");
+  const [authed, setAuthed] = useState(false);
   const [input, setInput] = useState("");
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function load(s: string) {
+  async function loadStats() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/stats?secret=${encodeURIComponent(s)}`);
-      if (res.status === 403) { setError("Неверный пароль"); return; }
+      const res = await fetch("/api/admin/stats");
+      if (res.status === 401) { setAuthed(false); return; }
       const data = await res.json();
       setStats(data);
-      setSecret(s);
-      sessionStorage.setItem("admin_secret", s);
+      setAuthed(true);
     } catch {
       setError("Ошибка загрузки");
     } finally {
@@ -56,12 +55,39 @@ export default function AdminPage() {
     }
   }
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem("admin_secret");
-    if (saved) load(saved);
-  }, []);
+  async function handleLogin() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: input }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Ошибка входа");
+        setLoading(false);
+        return;
+      }
+      setInput("");
+      await loadStats();
+    } catch {
+      setError("Ошибка соединения");
+      setLoading(false);
+    }
+  }
 
-  if (!secret || !stats) {
+  async function handleLogout() {
+    await fetch("/api/admin/logout", { method: "POST" });
+    setAuthed(false);
+    setStats(null);
+  }
+
+  // Cookie is HttpOnly, so we can't read it client-side — just try loading stats once on mount.
+  useEffect(() => { loadStats(); }, []);
+
+  if (!authed || !stats) {
     return (
       <div style={styles.loginWrap}>
         <div style={styles.loginCard}>
@@ -72,11 +98,11 @@ export default function AdminPage() {
             placeholder="Пароль"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && load(input)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
             autoFocus
           />
           {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.loginBtn} onClick={() => load(input)} disabled={loading}>
+          <button style={styles.loginBtn} onClick={handleLogin} disabled={loading}>
             {loading ? "Загрузка…" : "Войти"}
           </button>
         </div>
@@ -91,7 +117,7 @@ export default function AdminPage() {
     <div style={styles.page}>
       <div style={styles.header}>
         <h1 style={styles.title}>Admin Panel</h1>
-        <button style={styles.logoutBtn} onClick={() => { sessionStorage.removeItem("admin_secret"); setSecret(""); setStats(null); }}>
+        <button style={styles.logoutBtn} onClick={handleLogout}>
           Выйти
         </button>
       </div>
@@ -206,7 +232,7 @@ export default function AdminPage() {
       </div>
 
       <div style={styles.footer}>
-        <button style={styles.refreshBtn} onClick={() => load(secret)} disabled={loading}>
+        <button style={styles.refreshBtn} onClick={loadStats} disabled={loading}>
           {loading ? "Обновление…" : "↻ Обновить"}
         </button>
       </div>

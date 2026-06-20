@@ -75,6 +75,23 @@ async function main() {
 
       CREATE INDEX IF NOT EXISTS desktop_sessions_user_id_idx ON desktop_sessions (user_id);
       CREATE INDEX IF NOT EXISTS desktop_sessions_created_at_idx ON desktop_sessions (created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS admin_login_attempts (
+        id         SERIAL PRIMARY KEY,
+        ip         TEXT NOT NULL,
+        success    BOOLEAN NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS admin_login_attempts_ip_idx ON admin_login_attempts (ip, created_at);
+
+      CREATE TABLE IF NOT EXISTS admin_audit_log (
+        id         SERIAL PRIMARY KEY,
+        action     TEXT NOT NULL,
+        ip         TEXT,
+        details    JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS admin_audit_log_created_at_idx ON admin_audit_log (created_at DESC);
     `);
 
     console.log("✓ Migrations applied");

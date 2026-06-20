@@ -1,24 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { getClientIp, verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
 
-const ADMIN_SECRET = process.env.ADMIN_FIX_SECRET;
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (!ADMIN_SECRET || secret !== ADMIN_SECRET) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = req.cookies.get("admin_session")?.value;
+  if (!verifyAdminSession(session)) {
+    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
   }
 
+  const ip = getClientIp(req);
+  await logAdminAction("view_stats", ip);
+
   const [tgTx, dbPayments, userStats] = await Promise.all([
-    // Stars transactions from Telegram
     BOT_TOKEN
       ? fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getStarTransactions`)
           .then((r) => r.json())
           .catch(() => null)
       : Promise.resolve(null),
 
-    // Payments from DB
     pool
       .query(
         `SELECT p.id, p.user_id, p.telegram_charge_id, p.stars_amount, p.plan_type, p.created_at,
@@ -30,7 +31,6 @@ export async function GET(req: NextRequest) {
       )
       .catch(() => ({ rows: [] })),
 
-    // User stats
     pool
       .query(
         `SELECT
@@ -46,16 +46,12 @@ export async function GET(req: NextRequest) {
     tgTx?.ok ? tgTx.result.transactions : [];
 
   const starsBalance = transactions.reduce(
-    (sum: number, tx: { amount: number; nanostar_amount?: number }) =>
-      sum + tx.amount,
+    (sum: number, tx: { amount: number }) => sum + tx.amount,
     0
   );
 
   return NextResponse.json({
-    stars: {
-      balance: starsBalance,
-      transactions,
-    },
+    stars: { balance: starsBalance, transactions },
     payments: dbPayments.rows,
     users: userStats.rows[0],
   });
