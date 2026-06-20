@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET ?? "";
 
 const PLAN_STARS: Record<string, number> = {
@@ -11,6 +11,7 @@ const PLAN_STARS: Record<string, number> = {
 };
 
 async function answerPreCheckoutQuery(id: string, ok: boolean, error?: string) {
+  if (!BOT_TOKEN) return;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerPreCheckoutQuery`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -19,7 +20,6 @@ async function answerPreCheckoutQuery(id: string, ok: boolean, error?: string) {
 }
 
 export async function POST(req: NextRequest) {
-  // Validate secret token
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
   if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -32,28 +32,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  // Handle pre_checkout_query — must respond within 10s
+  // pre_checkout_query (fiat only, not Stars)
   if (update.pre_checkout_query) {
     const pcq = update.pre_checkout_query as {
       id: string;
       invoice_payload: string;
       total_amount: number;
-      currency: string;
     };
-
-    const [userId, planType] = pcq.invoice_payload.split(":");
-    const expectedStars = PLAN_STARS[planType];
-
-    if (!userId || !planType || !expectedStars || pcq.total_amount !== expectedStars) {
+    const [, planType] = pcq.invoice_payload.split(":");
+    if (!planType || !(planType in PLAN_STARS)) {
       await answerPreCheckoutQuery(pcq.id, false, "Неверный инвойс");
-      return NextResponse.json({ ok: true });
+    } else {
+      await answerPreCheckoutQuery(pcq.id, true);
     }
-
-    await answerPreCheckoutQuery(pcq.id, true);
     return NextResponse.json({ ok: true });
   }
 
-  // Handle successful_payment
+  // successful_payment
   const message = update.message as Record<string, unknown> | undefined;
   if (message?.successful_payment) {
     const payment = message.successful_payment as {
@@ -66,27 +61,18 @@ export async function POST(req: NextRequest) {
     const userId = parseInt(userIdStr, 10);
 
     if (!userId || !planType) {
-      console.error("Webhook: invalid payload", payment.invoice_payload);
+      console.error("Webhook: invalid payload:", payment.invoice_payload);
       return NextResponse.json({ ok: true });
     }
 
+    // Update plan first — this is critical
     try {
-      // Record payment (ignore duplicate charge IDs)
-      await pool.query(
-        `INSERT INTO payments (user_id, telegram_charge_id, stars_amount, plan_type)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (telegram_charge_id) DO NOTHING`,
-        [userId, payment.telegram_payment_charge_id, payment.total_amount, planType]
-      );
-
-      // Update user plan
       if (planType === "lifetime") {
         await pool.query(
           "UPDATE users SET plan = 'pro', pro_expires_at = NULL WHERE id = $1",
           [userId]
         );
       } else {
-        // test and monthly — 30 days, extend if already has pro
         await pool.query(
           `UPDATE users
            SET plan = 'pro',
@@ -96,8 +82,19 @@ export async function POST(req: NextRequest) {
         );
       }
     } catch (err) {
-      console.error("Webhook payment processing error:", err);
-      // Still return 200 so Telegram doesn't retry
+      console.error("Webhook: failed to update user plan:", err);
+    }
+
+    // Record payment separately so a missing table doesn't block the plan update
+    try {
+      await pool.query(
+        `INSERT INTO payments (user_id, telegram_charge_id, stars_amount, plan_type)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (telegram_charge_id) DO NOTHING`,
+        [userId, payment.telegram_payment_charge_id, payment.total_amount, planType]
+      );
+    } catch (err) {
+      console.error("Webhook: failed to record payment:", err);
     }
   }
 
