@@ -95,14 +95,17 @@ async function main() {
 
       CREATE TABLE IF NOT EXISTS admin_otp_codes (
         id         SERIAL PRIMARY KEY,
+        user_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
         code_hash  TEXT NOT NULL,
         used       BOOLEAN NOT NULL DEFAULT false,
         attempts   INTEGER NOT NULL DEFAULT 0,
         expires_at TIMESTAMPTZ NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      ALTER TABLE admin_otp_codes ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
 
       ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user';
     `);
 
     console.log("✓ Migrations applied");

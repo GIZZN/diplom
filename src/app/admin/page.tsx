@@ -1,22 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Script from "next/script";
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: { client_id: string; callback: (resp: { credential: string }) => void }) => void;
-          renderButton: (el: HTMLElement, options: Record<string, unknown>) => void;
-        };
-      };
-    };
-  }
-}
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Transaction {
   id: string;
@@ -33,7 +18,6 @@ interface Payment {
   stars_amount: number;
   plan_type: string;
   created_at: string;
-  telegram_charge_id: string;
 }
 
 interface Stats {
@@ -48,133 +32,52 @@ const PLAN_LABEL: Record<string, string> = {
   lifetime: "Навсегда (2000 ⭐)",
 };
 
-type Step = "google" | "otp" | "authed";
-
 export default function AdminPage() {
-  const [step, setStep] = useState<Step>("google");
-  const [otp, setOtp] = useState("");
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const googleBtnRef = useRef<HTMLDivElement>(null);
 
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/admin/stats");
-      if (res.status === 401) { setStep("google"); return; }
-      const data = await res.json();
-      setStats(data);
-      setStep("authed");
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/auth?redirect=/admin");
+        return;
+      }
+      setStats(await res.json());
     } catch {
       setError("Ошибка загрузки");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleGoogleCredential(credential: string) {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(data.error ?? "Ошибка входа"); return; }
-      setStep("otp");
-    } catch {
-      setError("Ошибка соединения");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerifyOtp() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: otp }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(data.error ?? "Ошибка"); return; }
-      setOtp("");
-      await loadStats();
-    } catch {
-      setError("Ошибка соединения");
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [router]);
 
   async function handleLogout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    setStep("google");
-    setStats(null);
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/auth");
   }
 
-  // Cookie is HttpOnly, so we can't read it client-side — just try loading stats once on mount.
-  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadStats(); }, [loadStats]);
 
-  useEffect(() => {
-    if (step !== "google" || !window.google || !googleBtnRef.current || !GOOGLE_CLIENT_ID) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: (resp) => handleGoogleCredential(resp.credential),
-    });
-    window.google.accounts.id.renderButton(googleBtnRef.current, { theme: "filled_black", size: "large", width: 280 });
-  }, [step]);
-
-  if (step === "google") {
+  if (loading) {
     return (
-      <>
-        <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onLoad={() => setStep((s) => s)} />
-        <div style={styles.loginWrap}>
-          <div style={styles.loginCard}>
-            <h1 style={styles.loginTitle}>Admin</h1>
-            <p style={styles.loginSub}>Войдите через Google-аккаунт владельца</p>
-            <div ref={googleBtnRef} style={{ display: "flex", justifyContent: "center" }} />
-            {error && <p style={styles.error}>{error}</p>}
-            {loading && <p style={styles.loadingText}>Проверка…</p>}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (step === "otp") {
-    return (
-      <div style={styles.loginWrap}>
-        <div style={styles.loginCard}>
-          <h1 style={styles.loginTitle}>Код подтверждения</h1>
-          <p style={styles.loginSub}>Отправили 6-значный код на почту</p>
-          <input
-            style={styles.loginInput}
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            placeholder="000000"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-            onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
-            autoFocus
-          />
-          {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.loginBtn} onClick={handleVerifyOtp} disabled={loading}>
-            {loading ? "Проверка…" : "Войти"}
-          </button>
-        </div>
+      <div style={styles.page}>
+        <div style={{ color: "#666", paddingTop: 80, textAlign: "center" }}>Загрузка…</div>
       </div>
     );
   }
 
-  if (!stats) return null;
+  if (error || !stats) {
+    return (
+      <div style={styles.page}>
+        <p style={{ color: "#f87171" }}>{error || "Нет данных"}</p>
+        <button style={styles.refreshBtn} onClick={loadStats}>Повторить</button>
+      </div>
+    );
+  }
 
   const { stars, payments, users } = stats;
   const canWithdraw = stars.balance >= 1000;
@@ -183,12 +86,9 @@ export default function AdminPage() {
     <div style={styles.page}>
       <div style={styles.header}>
         <h1 style={styles.title}>Admin Panel</h1>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          Выйти
-        </button>
+        <button style={styles.logoutBtn} onClick={handleLogout}>Выйти</button>
       </div>
 
-      {/* User stats */}
       <div style={styles.row}>
         <div style={styles.card}>
           <div style={styles.cardLabel}>Всего пользователей</div>
@@ -203,21 +103,18 @@ export default function AdminPage() {
           <div style={styles.cardValue}>{users.new_last_7d}</div>
         </div>
         <div style={styles.card}>
-          <div style={styles.cardLabel}>Баланс Stars (бот)</div>
+          <div style={styles.cardLabel}>Баланс Stars</div>
           <div style={{ ...styles.cardValue, color: "#fbbf24" }}>⭐ {stars.balance}</div>
         </div>
       </div>
 
-      {/* Withdraw */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>Кошелёк Stars</h2>
         <div style={styles.walletCard}>
           <div>
             <div style={styles.walletBalance}>⭐ {stars.balance}</div>
             <div style={styles.walletSub}>
-              {canWithdraw
-                ? "Можно вывести на Fragment"
-                : `Нужно ещё ${1000 - stars.balance} ⭐ для вывода`}
+              {canWithdraw ? "Можно вывести на Fragment" : `Нужно ещё ${1000 - stars.balance} ⭐`}
             </div>
           </div>
           <a
@@ -229,65 +126,38 @@ export default function AdminPage() {
             Вывести на Fragment →
           </a>
         </div>
-        <p style={styles.hint}>
-          Fragment конвертирует Stars → TON → продаёшь на бирже (Binance / OKX) за рубли.
-          Минимум: 1000 ⭐ ≈ $9.
-        </p>
+        <p style={styles.hint}>Fragment конвертирует Stars → TON. Минимум: 1000 ⭐ ≈ $9.</p>
       </div>
 
-      {/* Telegram transactions */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>Транзакции Telegram ({stars.transactions.length})</h2>
-        {stars.transactions.length === 0 ? (
-          <div style={styles.empty}>Нет транзакций</div>
-        ) : (
+        {stars.transactions.length === 0 ? <div style={styles.empty}>Нет транзакций</div> : (
           <div style={styles.table}>
             <div style={{ ...styles.tableRow, ...styles.tableHead }}>
-              <span>Дата</span>
-              <span>Сумма</span>
-              <span>От кого</span>
-              <span>Тариф</span>
+              <span>Дата</span><span>Сумма</span><span>От кого</span><span>Тариф</span>
             </div>
             {stars.transactions.map((tx) => (
               <div key={tx.id} style={styles.tableRow}>
-                <span style={styles.muted}>
-                  {new Date(tx.date * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                </span>
+                <span style={styles.muted}>{new Date(tx.date * 1000).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 <span style={{ color: "#fbbf24", fontWeight: 600 }}>⭐ {tx.amount}</span>
-                <span>
-                  {tx.source?.user?.username
-                    ? `@${tx.source.user.username}`
-                    : tx.source?.user?.first_name ?? "—"}
-                </span>
-                <span style={styles.muted}>
-                  {tx.source?.invoice_payload
-                    ? PLAN_LABEL[tx.source.invoice_payload.split(":")[1]] ?? tx.source.invoice_payload
-                    : "—"}
-                </span>
+                <span>{tx.source?.user?.username ? `@${tx.source.user.username}` : tx.source?.user?.first_name ?? "—"}</span>
+                <span style={styles.muted}>{tx.source?.invoice_payload ? PLAN_LABEL[tx.source.invoice_payload.split(":")[1]] ?? tx.source.invoice_payload : "—"}</span>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* DB payments */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>Платежи в БД ({payments.length})</h2>
-        {payments.length === 0 ? (
-          <div style={styles.empty}>Нет платежей в БД</div>
-        ) : (
+        {payments.length === 0 ? <div style={styles.empty}>Нет платежей в БД</div> : (
           <div style={styles.table}>
             <div style={{ ...styles.tableRow, ...styles.tableHead }}>
-              <span>Дата</span>
-              <span>Пользователь</span>
-              <span>Тариф</span>
-              <span>⭐</span>
+              <span>Дата</span><span>Пользователь</span><span>Тариф</span><span>⭐</span>
             </div>
             {payments.map((p) => (
               <div key={p.id} style={styles.tableRow}>
-                <span style={styles.muted}>
-                  {new Date(p.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                </span>
+                <span style={styles.muted}>{new Date(p.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                 <span title={p.email}>{p.name ?? p.email}</span>
                 <span>{PLAN_LABEL[p.plan_type] ?? p.plan_type}</span>
                 <span style={{ color: "#fbbf24" }}>⭐ {p.stars_amount}</span>
@@ -298,49 +168,33 @@ export default function AdminPage() {
       </div>
 
       <div style={styles.footer}>
-        <button style={styles.refreshBtn} onClick={loadStats} disabled={loading}>
-          {loading ? "Обновление…" : "↻ Обновить"}
-        </button>
+        <button style={styles.refreshBtn} onClick={loadStats} disabled={loading}>↻ Обновить</button>
       </div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  loginWrap: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a" },
-  loginCard: { background: "#111", border: "1px solid #222", borderRadius: 12, padding: "40px 32px", display: "flex", flexDirection: "column", gap: 12, width: 300 },
-  loginTitle: { color: "#fff", margin: 0, fontSize: 22, fontWeight: 700, textAlign: "center" },
-  loginInput: { background: "#1a1a1a", border: "1px solid #333", borderRadius: 8, padding: "10px 14px", color: "#fff", fontSize: 15, outline: "none" },
-  loginBtn: { background: "#fff", color: "#000", border: "none", borderRadius: 8, padding: "10px 0", fontWeight: 700, fontSize: 15, cursor: "pointer" },
-  loginSub: { color: "#777", fontSize: 13, margin: "0 0 4px", textAlign: "center" },
-  loadingText: { color: "#666", fontSize: 13, margin: 0, textAlign: "center" },
-  error: { color: "#f87171", fontSize: 13, margin: 0, textAlign: "center" },
-
   page: { minHeight: "100vh", background: "#0a0a0a", color: "#fff", fontFamily: "system-ui, sans-serif", padding: "32px 24px", maxWidth: 900, margin: "0 auto" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 },
   title: { fontSize: 24, fontWeight: 700, margin: 0 },
   logoutBtn: { background: "none", border: "1px solid #333", color: "#888", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontSize: 13 },
-
   row: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 32 },
   card: { background: "#111", border: "1px solid #222", borderRadius: 10, padding: "16px 20px" },
   cardLabel: { fontSize: 12, color: "#666", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" },
   cardValue: { fontSize: 26, fontWeight: 700, color: "#fff" },
-
   section: { marginBottom: 32 },
   sectionTitle: { fontSize: 16, fontWeight: 600, marginBottom: 12, color: "#ccc" },
-
   walletCard: { background: "#111", border: "1px solid #333", borderRadius: 12, padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" },
   walletBalance: { fontSize: 36, fontWeight: 700, color: "#fbbf24" },
   walletSub: { fontSize: 13, color: "#666", marginTop: 4 },
-  withdrawBtn: { background: "#fbbf24", color: "#000", border: "none", borderRadius: 8, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", display: "inline-block" },
+  withdrawBtn: { background: "#fbbf24", color: "#000", borderRadius: 8, padding: "12px 20px", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", display: "inline-block" },
   hint: { fontSize: 12, color: "#555", marginTop: 10 },
-
   table: { background: "#111", border: "1px solid #222", borderRadius: 10, overflow: "hidden" },
   tableHead: { background: "#161616", color: "#555", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em" },
   tableRow: { display: "grid", gridTemplateColumns: "140px 80px 1fr 1fr", gap: 16, padding: "10px 16px", borderBottom: "1px solid #1a1a1a", fontSize: 13, alignItems: "center" },
   muted: { color: "#666" },
   empty: { color: "#555", padding: "20px 0", textAlign: "center", fontSize: 14 },
-
   footer: { marginTop: 16, display: "flex", justifyContent: "flex-end" },
   refreshBtn: { background: "#1a1a1a", border: "1px solid #333", color: "#ccc", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 13 },
 };

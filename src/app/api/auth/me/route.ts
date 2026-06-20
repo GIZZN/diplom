@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   }
 
   const result = await pool.query(
-    `SELECT u.id, u.name, u.email, u.plan, u.pro_expires_at, u.token_revoked_before,
+    `SELECT u.id, u.name, u.email, u.plan, u.role, u.pro_expires_at, u.token_revoked_before,
             a.avatar, u.created_at
      FROM users u
      LEFT JOIN user_avatars a ON a.user_id = u.id
@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
         email: user.email,
         avatar: user.avatar ?? null,
         created_at: user.created_at,
+        role: user.role ?? "user",
         plan,
         pro_expires_at: proExpiresAt,
       },

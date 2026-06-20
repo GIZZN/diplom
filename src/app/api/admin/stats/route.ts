@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { getClientIp, verifyAdminSession, logAdminAction } from "@/lib/admin-auth";
+import { verifyToken } from "@/lib/auth";
+import { getClientIp, logAdminAction } from "@/lib/admin-auth";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
+async function isAdmin(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get("token")?.value;
+  if (!token) return false;
+  const payload = verifyToken(token);
+  if (!payload) return false;
+  const result = await pool.query("SELECT role FROM users WHERE id = $1", [payload.userId]);
+  return result.rows[0]?.role === "admin";
+}
+
 export async function GET(req: NextRequest) {
-  const session = req.cookies.get("admin_session")?.value;
-  if (!verifyAdminSession(session)) {
-    return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
   }
 
   const ip = getClientIp(req);
@@ -42,13 +51,9 @@ export async function GET(req: NextRequest) {
       .catch(() => ({ rows: [{ total_users: 0, pro_users: 0, new_last_7d: 0 }] })),
   ]);
 
-  const transactions: { id: string; date: number; amount: number; from?: string; payload?: string }[] =
+  const transactions: { id: string; date: number; amount: number }[] =
     tgTx?.ok ? tgTx.result.transactions : [];
-
-  const starsBalance = transactions.reduce(
-    (sum: number, tx: { amount: number }) => sum + tx.amount,
-    0
-  );
+  const starsBalance = transactions.reduce((sum: number, tx: { amount: number }) => sum + tx.amount, 0);
 
   return NextResponse.json({
     stars: { balance: starsBalance, transactions },

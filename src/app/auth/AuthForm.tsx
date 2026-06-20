@@ -30,10 +30,14 @@ function Logo() {
 }
 
 type Mode = "login" | "register";
+type Step = "form" | "otp";
 
 export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
+  const [step, setStep] = useState<Step>("form");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpHint, setOtpHint] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -57,6 +61,30 @@ export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: s
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Не удалось войти через Google"); return; }
+      if (data.step === "otp") {
+        setOtpHint(data.hint || "Код отправлен на вашу почту");
+        setStep("otp");
+        return;
+      }
+      router.push(redirectTo);
+    } catch {
+      setError("Ошибка соединения с сервером");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Неверный код"); return; }
       router.push(redirectTo);
     } catch {
       setError("Ошибка соединения с сервером");
@@ -105,6 +133,48 @@ export default function AuthForm({ redirectTo = "/dashboard" }: { redirectTo?: s
     } finally {
       setLoading(false);
     }
+  }
+
+  if (step === "otp") {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <div className={styles.logo}>
+            <Logo />
+            <span className={styles.logoText}>interview.ai</span>
+          </div>
+          <h2 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 700 }}>Подтверждение</h2>
+          <p style={{ margin: "0 0 16px", fontSize: 13, color: "var(--text-muted, #888)" }}>{otpHint}</p>
+          <div className={styles.field}>
+            <label className={styles.label}>Код из письма</label>
+            <input
+              className={styles.input}
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={otpCode}
+              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "")); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+              autoFocus
+            />
+          </div>
+          {error && <div className={styles.error}>{error}</div>}
+          <button className={styles.submitBtn} onClick={handleVerifyOtp} disabled={loading || otpCode.length < 6}>
+            {loading ? "Проверка…" : "Войти"}
+          </button>
+          <button
+            style={{ marginTop: 8, background: "none", border: "none", color: "var(--text-muted, #888)", fontSize: 13, cursor: "pointer" }}
+            onClick={() => { setStep("form"); setError(""); setOtpCode(""); }}
+          >
+            ← Назад
+          </button>
+        </div>
+        <footer className={styles.footer}>
+          <span>© 2026 interview.ai</span>
+        </footer>
+      </div>
+    );
   }
 
   return (
