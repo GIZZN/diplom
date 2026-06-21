@@ -4,6 +4,7 @@ import { Resend } from "resend";
 import pool from "@/lib/db";
 import { signToken, signPendingToken } from "@/lib/auth";
 import { generateOtpCode, createOtp, getClientIp, logAdminAction } from "@/lib/admin-auth";
+import { otpCodeEmail } from "@/lib/email-templates";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
@@ -89,6 +90,7 @@ export async function GET(req: NextRequest) {
         to: email,
         subject: `Код входа: ${otpCode}`,
         text: `Код подтверждения: ${otpCode}\n\nДействует 5 минут.`,
+        html: otpCodeEmail(otpCode, 5),
       }).catch((err) => console.error("Failed to send OTP:", err));
 
       await logAdminAction("admin_google_otp_sent", ip, { email });
