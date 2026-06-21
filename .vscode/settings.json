@@ -1,2 +1,16 @@
 {
+  "claude-code.apiKey": "fe_oa_6822753c52584107e59e843e00960197b930bb6816c33921",
+  "claude-code.environmentVariables": {
+    "ANTHROPIC_BASE_URL": "http://localhost:9000",
+    "ANTHROPIC_API_URL": "http://localhost:9000",
+    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "eslint",
+    "editor.formatOnSave": false
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "eslint",
+    "editor.formatOnSave": false
+  }
 }
