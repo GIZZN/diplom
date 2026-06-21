@@ -126,6 +126,9 @@
 
 .statValueStars {
   color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 @media (max-width: 720px) {
@@ -199,6 +202,9 @@
 }
 
 .walletBalance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 34px;
   font-weight: 700;
   color: #fbbf24;

@@ -53,6 +53,30 @@ function IconRefresh() {
   );
 }
 
+function IconStar({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.5l2.97 6.46 7.03.83-5.2 4.86 1.4 6.95L12 17.9l-6.2 3.7 1.4-6.95-5.2-4.86 7.03-.83L12 2.5z" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconWarning() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path d="M12 9v4m0 4h.01M10.29 3.86l-8.18 14.18A1 1 0 0 0 3 19.5h18a1 1 0 0 0 .87-1.46L13.71 3.86a1 1 0 0 0-1.72 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -137,7 +161,9 @@ export default function AdminPage() {
           </div>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Баланс Stars</span>
-            <span className={`${styles.statValue} ${styles.statValueStars}`}>⭐ {stars.balance}</span>
+            <span className={`${styles.statValue} ${styles.statValueStars}`}>
+              <IconStar size={20} /> {stars.balance}
+            </span>
           </div>
         </div>
 
@@ -147,9 +173,13 @@ export default function AdminPage() {
           </div>
           <div className={styles.walletCard}>
             <div>
-              <div className={styles.walletBalance}>⭐ {stars.balance}</div>
+              <div className={styles.walletBalance}>
+                <IconStar size={28} /> {stars.balance}
+              </div>
               <div className={styles.walletSub}>
-                {canWithdraw ? "Можно вывести на Fragment" : `Нужно ещё ${1000 - stars.balance} ⭐ для вывода`}
+                {canWithdraw
+                  ? "Можно вывести на Fragment"
+                  : `Нужно ещё ${1000 - stars.balance} Stars для вывода`}
               </div>
             </div>
             <a
@@ -161,7 +191,7 @@ export default function AdminPage() {
               Вывести на Fragment →
             </a>
           </div>
-          <p className={styles.hint}>Fragment конвертирует Stars → TON. Минимум для вывода: 1000 ⭐ ≈ $9.</p>
+          <p className={styles.hint}>Fragment конвертирует Stars → TON. Минимум для вывода: 1000 Stars ≈ $9.</p>
         </div>
 
         <div className={styles.section}>
@@ -189,7 +219,9 @@ export default function AdminPage() {
                 <span>Оплатил (Telegram)</span>
                 <span>Аккаунт на сайте</span>
                 <span>Тариф</span>
-                <span>⭐</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <IconStar size={11} /> Stars
+                </span>
                 <span>Статус</span>
               </div>
               {transactions.map((t) => (
@@ -207,11 +239,13 @@ export default function AdminPage() {
                     <span className={styles.cellAccountMissing}>аккаунт не найден</span>
                   )}
                   <span className={styles.cellPlan}>{t.planType ? PLAN_LABEL[t.planType] ?? t.planType : "—"}</span>
-                  <span className={styles.cellStars}>⭐ {t.amount}</span>
+                  <span className={styles.cellStars}>
+                    <IconStar size={11} /> {t.amount}
+                  </span>
                   {t.recorded ? (
-                    <span className={styles.statusOk}>✓ записано</span>
+                    <span className={styles.statusOk}><IconCheck /> записано</span>
                   ) : (
-                    <span className={styles.statusWarn}>⚠ нет в БД</span>
+                    <span className={styles.statusWarn}><IconWarning /> нет в БД</span>
                   )}
                 </div>
               ))}

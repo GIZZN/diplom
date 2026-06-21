@@ -21,6 +21,14 @@ function Logo({ size = 28 }: { size?: number }) {
   );
 }
 
+function IconStar({ size = 13, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ display: "inline", verticalAlign: "middle", flexShrink: 0 }}>
+      <path d="M12 2.5l2.97 6.46 7.03.83-5.2 4.86 1.4 6.95L12 17.9l-6.2 3.7 1.4-6.95-5.2-4.86 7.03-.83L12 2.5z" />
+    </svg>
+  );
+}
+
 export default function Home() {
   return (
     <div className={styles.page}>
@@ -456,9 +464,9 @@ function Pricing() {
           </div>
 
           <div className={styles.price}>
-            500 <span>⭐ / мес</span>
+            500 <span><IconStar size={18} color="#fbbf24" /> / мес</span>
           </div>
-          <div className={styles.priceSub}>или 2 000 ⭐ навсегда · Оплата через Telegram Stars</div>
+          <div className={styles.priceSub}>или 2 000 <IconStar size={12} color="#fbbf24" /> навсегда · Оплата через Telegram Stars</div>
 
           <ul className={styles.pricingList}>
             <li>Безлимитные сессии</li>
@@ -476,7 +484,9 @@ function Pricing() {
               disabled={loadingPlan !== null}
               type="button"
             >
-              {loadingPlan === "monthly" ? "Открываем…" : "500 ⭐ — 30 дней"}
+              {loadingPlan === "monthly"
+                ? "Открываем…"
+                : <><IconStar size={13} color="currentColor" /> 500 Stars — 30 дней</>}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                 <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -488,7 +498,9 @@ function Pricing() {
               type="button"
               style={{ textAlign: "center" }}
             >
-              {loadingPlan === "lifetime" ? "Открываем…" : "2 000 ⭐ — навсегда"}
+              {loadingPlan === "lifetime"
+                ? "Открываем…"
+                : <><IconStar size={13} color="currentColor" /> 2 000 Stars — навсегда</>}
             </button>
             <button
               className={styles.pricingBtn}
@@ -497,7 +509,9 @@ function Pricing() {
               type="button"
               style={{ opacity: 0.5, fontSize: "0.75rem" }}
             >
-              {loadingPlan === "test" ? "Открываем…" : "1 ⭐ — тест"}
+              {loadingPlan === "test"
+                ? "Открываем…"
+                : <><IconStar size={11} color="currentColor" /> 1 Star — тест</>}
             </button>
           </div>
         </div>
