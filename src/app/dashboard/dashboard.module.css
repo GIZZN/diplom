@@ -232,6 +232,29 @@
   color: #f87171;
 }
 
+.adminBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(28, 221, 164, 0.2);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  margin-bottom: 4px;
+}
+
+.adminBtn:hover {
+  background: rgba(28, 221, 164, 0.14);
+  border-color: rgba(28, 221, 164, 0.35);
+}
+
 .logoutBtn {
   display: flex;
   align-items: center;

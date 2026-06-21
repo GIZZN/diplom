@@ -17,6 +17,7 @@ interface User {
   created_at: string;
   plan: string;
   pro_expires_at: string | null;
+  role: string;
 }
 
 type NavItem = "dashboard" | "sessions" | "analytics" | "settings" | "help";
@@ -90,6 +91,15 @@ function IconLogout() {
       <path d="M5.5 2H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
       <path d="M10 10l3-2.5L10 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M13 7.5H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconAdmin() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3l8 4v5c0 4.42-3.37 8.56-8 9.93C7.37 20.56 4 16.42 4 12V7l8-4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -333,6 +343,12 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          {user?.role === "admin" && (
+            <Link href="/admin" className={styles.adminBtn}>
+              <IconAdmin />
+              <span>Admin Panel</span>
+            </Link>
+          )}
           <button className={styles.logoutBtn} onClick={handleLogout} type="button" aria-label="Выйти из аккаунта">
             <IconLogout />
             <span>Выйти</span>
@@ -376,36 +392,6 @@ export default function DashboardPage() {
                   : <span className={styles.statUnit}>—</span>
                 }
               </span>
-            </div>
-          </section>
-
-          {/* Quick start */}
-          <section className={styles.quickStart}>
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>Быстрый старт</h3>
-            </div>
-            <div className={styles.quickStartCard}>
-              <p className={styles.quickStartDesc}>
-                Укажите роль, на которую проходите интервью, и AI-ассистент подберёт релевантные вопросы.
-              </p>
-              <div className={styles.quickStartForm}>
-                <div className={styles.inputWrapper}>
-                  <label htmlFor="role-input" className={styles.inputLabel}>Роль</label>
-                  <input
-                    id="role-input"
-                    className={styles.roleInput}
-                    type="text"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    placeholder="Frontend разработчик"
-                    autoComplete="off"
-                  />
-                </div>
-                <button className={styles.startBtn} type="button" disabled={!role.trim()}>
-                  <span>Начать сессию</span>
-                  <IconArrow />
-                </button>
-              </div>
             </div>
           </section>
 

@@ -77,14 +77,61 @@ function IconWarning() {
   );
 }
 
+function AdminSkeleton() {
+  return (
+    <div className={styles.page}>
+      <div className={styles.topBar}>
+        <div className={styles.topBarLeft}>
+          <Logo />
+          <span className={styles.logoText}>interview.ai</span>
+          <span className={styles.badge}>Admin</span>
+        </div>
+      </div>
+      <div className={styles.content}>
+        <div className={styles.skeletonStatsRow}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className={styles.skeletonCard}>
+              <div className={styles.skeletonBlock} style={{ height: 11, width: "55%" }} />
+              <div className={styles.skeletonBlock} style={{ height: 26, width: "40%" }} />
+            </div>
+          ))}
+        </div>
+        <div className={styles.skeletonWallet}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div className={styles.skeletonBlock} style={{ height: 32, width: 120 }} />
+            <div className={styles.skeletonBlock} style={{ height: 12, width: 200 }} />
+          </div>
+          <div className={styles.skeletonBlock} style={{ height: 44, width: 160, borderRadius: 100 }} />
+        </div>
+        <div className={styles.skeletonTable}>
+          <div className={styles.skeletonTableHead}>
+            <div className={styles.skeletonBlock} style={{ height: 10, width: "60%" }} />
+          </div>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className={styles.skeletonRow}>
+              <div className={styles.skeletonBlock} style={{ height: 12, width: 90, flexShrink: 0 }} />
+              <div className={styles.skeletonBlock} style={{ height: 12, width: 100, flexShrink: 0 }} />
+              <div className={styles.skeletonBlock} style={{ height: 12, flex: 1 }} />
+              <div className={styles.skeletonBlock} style={{ height: 12, width: 80, flexShrink: 0 }} />
+              <div className={styles.skeletonBlock} style={{ height: 12, width: 50, flexShrink: 0 }} />
+              <div className={styles.skeletonBlock} style={{ height: 12, width: 75, flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const loadStats = useCallback(async () => {
-    setLoading(true);
+  const loadStats = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     setError("");
     try {
       const res = await fetch("/api/admin/stats");
@@ -96,7 +143,8 @@ export default function AdminPage() {
     } catch {
       setError("Ошибка загрузки");
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
   }, [router]);
 
@@ -107,20 +155,14 @@ export default function AdminPage() {
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
-  if (loading && !stats) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.centerState}>Загрузка…</div>
-      </div>
-    );
-  }
+  if (initialLoading) return <AdminSkeleton />;
 
   if (error || !stats) {
     return (
       <div className={styles.page}>
         <div className={styles.centerState}>
           <span>{error || "Нет данных"}</span>
-          <button className={styles.refreshBtn} onClick={loadStats}>
+          <button className={styles.refreshBtn} onClick={() => loadStats()}>
             <IconRefresh /> Повторить
           </button>
         </div>
@@ -205,8 +247,8 @@ export default function AdminPage() {
                 </span>
               )}
             </div>
-            <button className={styles.refreshBtn} onClick={loadStats} disabled={loading}>
-              <IconRefresh /> {loading ? "Обновление…" : "Обновить"}
+            <button className={styles.refreshBtn} onClick={() => loadStats(true)} disabled={refreshing}>
+              <IconRefresh /> {refreshing ? "Обновление…" : "Обновить"}
             </button>
           </div>
 
