@@ -5,7 +5,6 @@ import { getCorsHeaders } from "@/lib/cors";
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
 const PLANS = {
-  test:     { label: "Тест",           description: "Тестовый платёж (1 звезда)",             amount: 1 },
   monthly:  { label: "Pro — 30 дней",  description: "Pro-подписка на 30 дней",                amount: 500 },
   lifetime: { label: "Pro — навсегда", description: "Пожизненный доступ к Pro-тарифу",        amount: 2000 },
 } as const;

@@ -5,7 +5,6 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET ?? "";
 
 const PLAN_STARS: Record<string, number> = {
-  test: 1,
   monthly: 500,
   lifetime: 2000,
 };

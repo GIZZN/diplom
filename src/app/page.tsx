@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import Image from "next/image";
 import styles from "./page.module.css";
 import Background from "./components/Background";
@@ -21,10 +21,19 @@ function Logo({ size = 28 }: { size?: number }) {
   );
 }
 
-function IconStar({ size = 13, color = "currentColor" }: { size?: number; color?: string }) {
+function IconStar({ size = 13 }: { size?: number; color?: string }) {
+  const uid = useId().replace(/:/g, "");
+  const g = `tgstar-${uid}`;
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ display: "inline", verticalAlign: "middle", flexShrink: 0 }}>
-      <path d="M12 2.5l2.97 6.46 7.03.83-5.2 4.86 1.4 6.95L12 17.9l-6.2 3.7 1.4-6.95-5.2-4.86 7.03-.83L12 2.5z" />
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ display: "inline", verticalAlign: "middle", flexShrink: 0 }}>
+      <defs>
+        <linearGradient id={g} x1="3" y1="2" x2="20" y2="21" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ffe27a" />
+          <stop offset="0.5" stopColor="#ffc01f" />
+          <stop offset="1" stopColor="#f29e00" />
+        </linearGradient>
+      </defs>
+      <path fill={`url(#${g})`} fillRule="evenodd" clipRule="evenodd" d="M11.4664 17.7532L6.96555 20.5105C6.49754 20.7972 5.88574 20.6502 5.59904 20.1822C5.45901 19.9536 5.41726 19.6782 5.48327 19.4184L6.18 16.676C6.4315 15.6861 7.10892 14.8586 8.02968 14.4165L12.9399 12.059C13.1688 11.9491 13.2653 11.6745 13.1553 11.4455C13.0663 11.2602 12.8651 11.1564 12.6624 11.1915L7.19676 12.1377C6.08572 12.3301 4.94636 12.0233 4.08213 11.299L2.35549 9.85207C1.93483 9.49955 1.8796 8.87276 2.23212 8.45211C2.40357 8.24752 2.65013 8.1205 2.91625 8.09968L8.19167 7.68682C8.56437 7.65765 8.88916 7.4218 9.03224 7.07642L11.0674 2.16367C11.2774 1.65662 11.8588 1.41586 12.3658 1.62591C12.6093 1.72677 12.8027 1.92021 12.9036 2.16367L14.9388 7.07642C15.0818 7.4218 15.4066 7.65765 15.7793 7.68682L21.0837 8.10194C21.6309 8.14477 22.0397 8.62304 21.9969 9.17021C21.9763 9.43343 21.8518 9.67763 21.6509 9.84891L17.6055 13.2978C17.3207 13.5405 17.1964 13.9227 17.284 14.2866L18.5277 19.4531C18.6561 19.9867 18.3277 20.5234 17.7941 20.6519C17.5377 20.7136 17.2673 20.6709 17.0424 20.5331L12.5046 17.7532C12.186 17.5581 11.7849 17.5581 11.4664 17.7532Z" />
     </svg>
   );
 }
@@ -396,7 +405,7 @@ function Pricing() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleBuy(plan: "test" | "monthly" | "lifetime") {
+  async function handleBuy(plan: "monthly" | "lifetime") {
     setError(null);
     setLoadingPlan(plan);
     try {
@@ -440,33 +449,14 @@ function Pricing() {
       <div className={styles.pricingGrid}>
         <div className={styles.pricingCard}>
           <div className={styles.planHeader}>
-            <h3>Базовый</h3>
-            <span className={styles.planTag}>Free</span>
-          </div>
-          <div className={styles.price}>
-            0 <span>₽ / мес</span>
-          </div>
-          <div className={styles.priceSub}>Навсегда</div>
-          <ul className={styles.pricingList}>
-            <li>5 сессий в день</li>
-            <li>Базовая ИИ-модель</li>
-            <li>Чат-ассистент</li>
-            <li>Сообщество</li>
-          </ul>
-          <a href="/auth" className={styles.pricingBtn}>Начать</a>
-        </div>
-
-        <div className={`${styles.pricingCard} ${styles.pricingCardPro}`}>
-          <div className={styles.proBadge}>Популярный</div>
-          <div className={styles.planHeader}>
             <h3>Pro</h3>
-            <span className={styles.planTagPro}>Pro</span>
+            <span className={styles.planTag}>30 дней</span>
           </div>
 
           <div className={styles.price}>
             500 <span><IconStar size={18} color="#fbbf24" /> / мес</span>
           </div>
-          <div className={styles.priceSub}>или 2 000 <IconStar size={12} color="#fbbf24" /> навсегда · Оплата через Telegram Stars</div>
+          <div className={styles.priceSub}>Подписка · Оплата через Telegram Stars</div>
 
           <ul className={styles.pricingList}>
             <li>Безлимитные сессии</li>
@@ -477,43 +467,52 @@ function Pricing() {
             <li>Экспорт данных</li>
           </ul>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <button
-              className={styles.pricingBtnPro}
-              onClick={() => handleBuy("monthly")}
-              disabled={loadingPlan !== null}
-              type="button"
-            >
-              {loadingPlan === "monthly"
-                ? "Открываем…"
-                : <><IconStar size={13} color="currentColor" /> 500 Stars — 30 дней</>}
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button
-              className={styles.pricingBtn}
-              onClick={() => handleBuy("lifetime")}
-              disabled={loadingPlan !== null}
-              type="button"
-              style={{ textAlign: "center" }}
-            >
-              {loadingPlan === "lifetime"
-                ? "Открываем…"
-                : <><IconStar size={13} color="currentColor" /> 2 000 Stars — навсегда</>}
-            </button>
-            <button
-              className={styles.pricingBtn}
-              onClick={() => handleBuy("test")}
-              disabled={loadingPlan !== null}
-              type="button"
-              style={{ opacity: 0.5, fontSize: "0.75rem" }}
-            >
-              {loadingPlan === "test"
-                ? "Открываем…"
-                : <><IconStar size={11} color="currentColor" /> 1 Star — тест</>}
-            </button>
+          <button
+            className={styles.pricingBtn}
+            onClick={() => handleBuy("monthly")}
+            disabled={loadingPlan !== null}
+            type="button"
+          >
+            {loadingPlan === "monthly"
+              ? "Открываем…"
+              : <><IconStar size={13} color="currentColor" /> 500 Stars — 30 дней</>}
+          </button>
+        </div>
+
+        <div className={`${styles.pricingCard} ${styles.pricingCardPro}`}>
+          <div className={styles.proBadge}>Выгодно</div>
+          <div className={styles.planHeader}>
+            <h3>Pro навсегда</h3>
+            <span className={styles.planTagPro}>Lifetime</span>
           </div>
+
+          <div className={styles.price}>
+            2 000 <span><IconStar size={18} color="#fbbf24" /> разово</span>
+          </div>
+          <div className={styles.priceSub}>Разовый платёж · Оплата через Telegram Stars</div>
+
+          <ul className={styles.pricingList}>
+            <li>Всё из подписки Pro</li>
+            <li>Безлимитные сессии</li>
+            <li>GPT-4 / Claude Opus</li>
+            <li>Режим скрытности</li>
+            <li>Аналитика и прогресс</li>
+            <li>Доступ навсегда без продлений</li>
+          </ul>
+
+          <button
+            className={styles.pricingBtnPro}
+            onClick={() => handleBuy("lifetime")}
+            disabled={loadingPlan !== null}
+            type="button"
+          >
+            {loadingPlan === "lifetime"
+              ? "Открываем…"
+              : <><IconStar size={13} color="currentColor" /> 2 000 Stars — навсегда</>}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </section>
