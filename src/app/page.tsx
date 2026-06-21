@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useId } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import styles from "./page.module.css";
 import Background from "./components/Background";
 import BackgroundPaths from "./bg/BackgroundPaths";
@@ -402,32 +403,6 @@ function How() {
 }
 
 function Pricing() {
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleBuy(plan: "monthly" | "lifetime") {
-    setError(null);
-    setLoadingPlan(plan);
-    try {
-      const res = await fetch("/api/payments/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      if (res.status === 401) {
-        window.location.href = "/auth";
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Ошибка"); return; }
-      window.open(data.url, "_blank");
-    } catch {
-      setError("Ошибка соединения");
-    } finally {
-      setLoadingPlan(null);
-    }
-  }
-
   return (
     <section className={styles.pricing} id="pricing">
       <div className={styles.pricingBg} aria-hidden="true">
@@ -441,10 +416,6 @@ function Pricing() {
           <span className={styles.muted}>Без сюрпризов.</span>
         </h2>
       </div>
-
-      {error && (
-        <p style={{ textAlign: "center", color: "var(--error, #f87171)", marginBottom: 16 }}>{error}</p>
-      )}
 
       <div className={styles.pricingGrid}>
         <div className={styles.pricingCard}>
@@ -467,16 +438,9 @@ function Pricing() {
             <li>Экспорт данных</li>
           </ul>
 
-          <button
-            className={styles.pricingBtn}
-            onClick={() => handleBuy("monthly")}
-            disabled={loadingPlan !== null}
-            type="button"
-          >
-            {loadingPlan === "monthly"
-              ? "Открываем…"
-              : <><IconStar size={13} color="currentColor" /> 500 Stars — 30 дней</>}
-          </button>
+          <Link href="/checkout?plan=monthly" className={styles.pricingBtn}>
+            <IconStar size={13} color="currentColor" /> Оформить за 500 Stars
+          </Link>
         </div>
 
         <div className={`${styles.pricingCard} ${styles.pricingCardPro}`}>
@@ -500,19 +464,12 @@ function Pricing() {
             <li>Доступ навсегда без продлений</li>
           </ul>
 
-          <button
-            className={styles.pricingBtnPro}
-            onClick={() => handleBuy("lifetime")}
-            disabled={loadingPlan !== null}
-            type="button"
-          >
-            {loadingPlan === "lifetime"
-              ? "Открываем…"
-              : <><IconStar size={13} color="currentColor" /> 2 000 Stars — навсегда</>}
+          <Link href="/checkout?plan=lifetime" className={styles.pricingBtnPro}>
+            <IconStar size={13} color="currentColor" /> Оформить за 2 000 Stars
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
+          </Link>
         </div>
       </div>
     </section>
