@@ -604,16 +604,18 @@ export default function DashboardPage() {
                 {analytics.by_day.length > 0 && (
                   <section className={styles.recentSection}>
                     <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Сессии за 14 дней</h3></div>
-                    <div className={styles.quickStartCard} style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, padding: "20px 16px", minHeight: 110 }}>
-                      {(() => {
-                        const max = Math.max(...analytics.by_day.map(d => d.count), 1);
-                        return analytics.by_day.map((d) => (
-                          <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                            <div style={{ width: "100%", background: "var(--accent)", borderRadius: 3, height: `${Math.max((d.count / max) * 72, 4)}px`, transition: "height 0.3s" }} />
-                            <span style={{ fontSize: 9, color: "var(--text-faint)", whiteSpace: "nowrap" }}>{d.date}</span>
-                          </div>
-                        ));
-                      })()}
+                    <div className={styles.chartCard}>
+                      <div className={styles.barChart}>
+                        {(() => {
+                          const max = Math.max(...analytics.by_day.map(d => d.count), 1);
+                          return analytics.by_day.map((d) => (
+                            <div key={d.date} className={styles.barCol}>
+                              <div className={styles.bar} style={{ height: `${Math.max((d.count / max) * 100, 5)}%` }} title={`${d.count}`} />
+                              <span className={styles.barLabel}>{d.date}</span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
                     </div>
                   </section>
                 )}
@@ -621,17 +623,15 @@ export default function DashboardPage() {
                 {analytics.by_type.length > 0 && (
                   <section className={styles.recentSection}>
                     <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>По типу</h3></div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div className={styles.settingsCard}>
                       {analytics.by_type.map((t) => {
                         const pct = analytics.total ? Math.round((t.count / analytics.total) * 100) : 0;
                         const label = t.type === "chat_message" ? "Чат" : t.type === "live_answer" ? "Голосовой ответ" : t.type === "screen_analysis" ? "Анализ экрана" : t.type;
                         return (
-                          <div key={t.type} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <span style={{ width: 130, fontSize: 12.5, color: "var(--text-secondary)" }}>{label}</span>
-                            <div style={{ flex: 1, height: 6, background: "var(--bg-elevated)", borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", borderRadius: 3, transition: "width 0.4s" }} />
-                            </div>
-                            <span style={{ fontSize: 12, color: "var(--text-muted)", width: 60, textAlign: "right" }}>{t.count} ({pct}%)</span>
+                          <div key={t.type} className={styles.typeBarRow}>
+                            <span className={styles.typeBarLabel}>{label}</span>
+                            <div className={styles.typeBarTrack}><div className={styles.typeBarFill} style={{ width: `${pct}%` }} /></div>
+                            <span className={styles.typeBarValue}>{t.count} ({pct}%)</span>
                           </div>
                         );
                       })}
@@ -642,12 +642,12 @@ export default function DashboardPage() {
                 {analytics.top_models.length > 0 && (
                   <section className={styles.recentSection}>
                     <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Топ моделей</h3></div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div className={styles.listRows}>
                       {analytics.top_models.map((m, i) => (
-                        <div key={m.model} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                          <span style={{ fontSize: 12, color: "var(--text-faint)", fontFamily: "var(--font-mono)", width: 16 }}>{i + 1}</span>
-                          <span style={{ flex: 1, fontSize: 13, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>{m.model.split("/").pop()?.split(":")[0] ?? m.model}</span>
-                          <span style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{m.count} сессий</span>
+                        <div key={m.model} className={styles.listRow}>
+                          <span className={styles.modelRank}>{i + 1}</span>
+                          <span className={styles.modelName}>{m.model.split("/").pop()?.split(":")[0] ?? m.model}</span>
+                          <span className={styles.modelCount}>{m.count} сессий</span>
                         </div>
                       ))}
                     </div>
@@ -660,26 +660,24 @@ export default function DashboardPage() {
           {/* ─── SETTINGS ─── */}
           {activeNav === "settings" && (
             <>
-              <section className={styles.quickStartCard} style={{ flexDirection: "column", gap: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <button className={styles.userAvatarBtn} style={{ width: 56, height: 56 }} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button">
+              <section className={styles.settingsCard}>
+                <div className={styles.profileHead}>
+                  <button className={styles.profileAvatarBtn} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button">
                     {user?.avatar
-                      ? <Image src={user.avatar} alt="Аватар" width={56} height={56} className={styles.userAvatarImg} style={{ borderRadius: "50%" }} />
-                      : <span className={styles.userAvatarInitial} style={{ fontSize: 20 }}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
+                      ? <Image src={user.avatar} alt="Аватар" width={64} height={64} className={styles.userAvatarImg} />
+                      : <span className={styles.profileAvatarInitial}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
                     <span className={styles.userAvatarOverlay}>
                       {avatarUploading ? <span className={styles.avatarSpinner} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>}
                     </span>
                   </button>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{user?.name}</div>
-                    <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>{user?.email}</div>
-                    <div style={{ marginTop: 6, display: "flex", gap: 6, alignItems: "center" }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 100, background: user?.plan === "pro" ? "rgba(167,139,250,0.12)" : "var(--bg-elevated)", color: user?.plan === "pro" ? "#a78bfa" : "var(--text-muted)", border: "1px solid", borderColor: user?.plan === "pro" ? "rgba(167,139,250,0.25)" : "var(--border)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <div className={styles.profileIdentity}>
+                    <span className={styles.profileName}>{user?.name}</span>
+                    <span className={styles.profileEmail}>{user?.email}</span>
+                    <div className={styles.profileBadges}>
+                      <span className={`${styles.profilePlanBadge} ${user?.plan === "pro" ? styles.profilePlanBadgePro : ""}`}>
                         {user?.plan === "pro" ? "Pro" : "Free"}
                       </span>
-                      {user?.plan !== "pro" && (
-                        <Link href="/#pricing" style={{ fontSize: 12, color: "var(--accent)", textDecoration: "none" }}>Улучшить план →</Link>
-                      )}
+                      {user?.plan !== "pro" && <Link href="/#pricing" className={styles.upgradeLink}>Улучшить план →</Link>}
                     </div>
                   </div>
                 </div>
@@ -690,47 +688,49 @@ export default function DashboardPage() {
 
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Профиль</h3></div>
-                <div className={styles.quickStartCard} style={{ flexDirection: "column", gap: 16 }}>
-                  <div className={styles.inputWrapper} style={{ maxWidth: 360 }}>
-                    <label className={styles.inputLabel}>Отображаемое имя</label>
-                    <input
-                      className={styles.roleInput}
-                      type="text"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      placeholder="Ваше имя"
-                    />
+                <div className={styles.settingsCard}>
+                  <div className={styles.formGrid}>
+                    <div className={styles.inputWrapper}>
+                      <label className={styles.inputLabel}>Отображаемое имя</label>
+                      <input className={styles.roleInput} type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Ваше имя" />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <label className={styles.inputLabel}>Email</label>
+                      <input className={styles.roleInput} type="email" value={user?.email ?? ""} readOnly />
+                    </div>
                   </div>
-                  <div className={styles.inputWrapper} style={{ maxWidth: 360 }}>
-                    <label className={styles.inputLabel}>Email</label>
-                    <input className={styles.roleInput} type="email" value={user?.email ?? ""} readOnly style={{ opacity: 0.6, cursor: "not-allowed" }} />
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  <span className={styles.metaLine}>
                     Зарегистрирован: {user?.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                  </span>
+                  {profileError && <div className={`${styles.formMsg} ${styles.formMsgError}`}>{profileError}</div>}
+                  {profileMsg  && <div className={`${styles.formMsg} ${styles.formMsgOk}`}>{profileMsg}</div>}
+                  <div className={styles.formActions}>
+                    <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving}>
+                      {profileSaving ? "Сохранение…" : "Сохранить"}<IconArrow />
+                    </button>
                   </div>
-                  {profileError && <div style={{ fontSize: 13, color: "#f87171", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "var(--radius-sm)", padding: "8px 12px" }}>{profileError}</div>}
-                  {profileMsg  && <div style={{ fontSize: 13, color: "var(--accent)", background: "var(--accent-soft)", border: "1px solid rgba(28,221,164,0.2)", borderRadius: "var(--radius-sm)", padding: "8px 12px" }}>{profileMsg}</div>}
-                  <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving} style={{ alignSelf: "flex-start" }}>
-                    {profileSaving ? "Сохранение…" : "Сохранить"}<IconArrow />
-                  </button>
                 </div>
               </section>
 
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Смена пароля</h3></div>
-                <div className={styles.quickStartCard} style={{ flexDirection: "column", gap: 14 }}>
-                  <div className={styles.inputWrapper} style={{ maxWidth: 360 }}>
-                    <label className={styles.inputLabel}>Текущий пароль</label>
-                    <input className={styles.roleInput} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" />
+                <div className={styles.settingsCard}>
+                  <div className={styles.formGrid}>
+                    <div className={styles.inputWrapper}>
+                      <label className={styles.inputLabel}>Текущий пароль</label>
+                      <input className={styles.roleInput} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" />
+                    </div>
+                    <div className={styles.inputWrapper}>
+                      <label className={styles.inputLabel}>Новый пароль</label>
+                      <input className={styles.roleInput} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Минимум 8 символов" />
+                    </div>
                   </div>
-                  <div className={styles.inputWrapper} style={{ maxWidth: 360 }}>
-                    <label className={styles.inputLabel}>Новый пароль</label>
-                    <input className={styles.roleInput} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Минимум 8 символов" />
+                  <span className={styles.formNote}>Если аккаунт создан через Google, смена пароля недоступна.</span>
+                  <div className={styles.formActions}>
+                    <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving || !currentPassword || !newPassword}>
+                      {profileSaving ? "Сохранение…" : "Сменить пароль"}<IconArrow />
+                    </button>
                   </div>
-                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Если аккаунт создан через Google, смена пароля недоступна.</p>
-                  <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving || !currentPassword || !newPassword} style={{ alignSelf: "flex-start" }}>
-                    {profileSaving ? "Сохранение…" : "Сменить пароль"}<IconArrow />
-                  </button>
                 </div>
               </section>
             </>
@@ -741,7 +741,7 @@ export default function DashboardPage() {
             <>
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Начало работы</h3></div>
-                <div className={styles.quickStartCard} style={{ flexDirection: "column", gap: 16 }}>
+                <div className={styles.settingsCard}>
                   <p className={styles.quickStartDesc}>Скачайте desktop-приложение, войдите через браузер — сессия синхронизируется автоматически.</p>
                   <DownloadDropdown align="left" trigger={<button className={styles.startBtn} type="button"><span>Скачать приложение</span><IconArrow /></button>} />
                 </div>
@@ -749,7 +749,7 @@ export default function DashboardPage() {
 
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Горячие клавиши</h3></div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div className={styles.listRows}>
                   {[
                     { keys: ["⌘", "⇧", "I"], action: "Открыть / скрыть ассистента" },
                     { keys: ["⌘", "⇧", "R"], action: "Начать новую сессию" },
@@ -757,9 +757,9 @@ export default function DashboardPage() {
                     { keys: ["⌘", "Enter"],    action: "Отправить сообщение" },
                     { keys: ["⌘", "⇧", "C"],   action: "Скопировать последний ответ" },
                   ].map((s) => (
-                    <div key={s.action} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }}>
-                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                        {s.keys.map((k) => <kbd key={k} style={{ padding: "2px 7px", background: "var(--bg-elevated)", border: "1px solid var(--border-strong)", borderRadius: 4, fontSize: 12, fontFamily: "var(--font-mono)", color: "var(--text-secondary)" }}>{k}</kbd>)}
+                    <div key={s.action} className={styles.listRow}>
+                      <div className={styles.kbdGroup}>
+                        {s.keys.map((k) => <kbd key={k} className={styles.kbd}>{k}</kbd>)}
                       </div>
                       <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{s.action}</span>
                     </div>
@@ -769,16 +769,13 @@ export default function DashboardPage() {
 
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Поддержка</h3></div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className={styles.listRows}>
                   {[
                     { label: "Написать в поддержку", href: "mailto:support@interview.ai" },
                     { label: "Сообщить об ошибке",   href: "https://github.com/GIZZN/diplom/issues" },
                   ].map((l) => (
-                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "var(--bg-secondary)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", fontSize: 13.5, color: "var(--text-primary)", textDecoration: "none", transition: "border-color 0.15s" }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = "var(--border-strong)")}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--border)")}
-                    >
-                      {l.label}<span style={{ color: "var(--text-muted)" }}>→</span>
+                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className={styles.helpLink}>
+                      {l.label}<span className={styles.helpLinkArrow}>→</span>
                     </a>
                   ))}
                 </div>
