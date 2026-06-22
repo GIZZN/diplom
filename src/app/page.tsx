@@ -554,8 +554,8 @@ function Footer() {
             </div>
             <div>
               <div className={styles.footerColTitle}>Правовое</div>
-              <a href="#">Конфиденциальность</a>
-              <a href="#">Условия</a>
+              <a href="/privacy">Конфиденциальность</a>
+              <a href="/terms">Условия</a>
             </div>
           </div>
         </div>
