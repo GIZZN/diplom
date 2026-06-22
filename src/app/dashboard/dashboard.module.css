@@ -503,6 +503,79 @@
   cursor: not-allowed;
 }
 
+/* ─── Settings: account overview (admin-style) ───────────────────────────── */
+
+.settingsOverview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.overviewCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s;
+}
+
+.overviewCard:hover {
+  border-color: var(--border-strong);
+}
+
+.overviewLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overviewValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.overviewValuePro {
+  color: #a78bfa;
+}
+
+.overviewValueSm {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.settingsDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+
+.profileHead .removeAvatarBtn {
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+@media (max-width: 720px) {
+  .settingsOverview {
+    grid-template-columns: 1fr;
+  }
+  .profileHead {
+    flex-wrap: wrap;
+  }
+  .profileHead .removeAvatarBtn {
+    margin-left: 0;
+  }
+}
+
 /* ─── Generic list rows (analytics / help) ────────────────────────────────── */
 
 .listRow {

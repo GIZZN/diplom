@@ -660,35 +660,65 @@ export default function DashboardPage() {
           {/* ─── SETTINGS ─── */}
           {activeNav === "settings" && (
             <>
-              <section className={styles.settingsCard}>
-                <div className={styles.profileHead}>
-                  <button className={styles.profileAvatarBtn} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button">
-                    {user?.avatar
-                      ? <Image src={user.avatar} alt="Аватар" width={64} height={64} className={styles.userAvatarImg} />
-                      : <span className={styles.profileAvatarInitial}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
-                    <span className={styles.userAvatarOverlay}>
-                      {avatarUploading ? <span className={styles.avatarSpinner} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>}
+              {/* Account overview */}
+              <section className={styles.recentSection}>
+                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Аккаунт</h3></div>
+                <div className={styles.settingsOverview}>
+                  <div className={styles.overviewCard}>
+                    <span className={styles.overviewLabel}>Тариф</span>
+                    <span className={`${styles.overviewValue} ${user?.plan === "pro" ? styles.overviewValuePro : ""}`}>
+                      {user?.plan === "pro" ? "Pro" : "Free"}
                     </span>
-                  </button>
-                  <div className={styles.profileIdentity}>
-                    <span className={styles.profileName}>{user?.name}</span>
-                    <span className={styles.profileEmail}>{user?.email}</span>
-                    <div className={styles.profileBadges}>
-                      <span className={`${styles.profilePlanBadge} ${user?.plan === "pro" ? styles.profilePlanBadgePro : ""}`}>
-                        {user?.plan === "pro" ? "Pro" : "Free"}
-                      </span>
-                      {user?.plan !== "pro" && <Link href="/#pricing" className={styles.upgradeLink}>Улучшить план →</Link>}
-                    </div>
+                  </div>
+                  <div className={styles.overviewCard}>
+                    <span className={styles.overviewLabel}>Подписка</span>
+                    <span className={styles.overviewValueSm}>
+                      {user?.plan === "pro"
+                        ? (user.pro_expires_at
+                            ? `до ${new Date(user.pro_expires_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}`
+                            : "Навсегда")
+                        : "Не активна"}
+                    </span>
+                  </div>
+                  <div className={styles.overviewCard}>
+                    <span className={styles.overviewLabel}>С нами с</span>
+                    <span className={styles.overviewValueSm}>
+                      {user?.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : "—"}
+                    </span>
                   </div>
                 </div>
-                {user?.avatar && (
-                  <button className={styles.removeAvatarBtn} onClick={handleAvatarRemove} type="button" style={{ alignSelf: "flex-start" }}>Удалить фото</button>
-                )}
               </section>
 
+              {/* Profile */}
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Профиль</h3></div>
                 <div className={styles.settingsCard}>
+                  <div className={styles.profileHead}>
+                    <button className={styles.profileAvatarBtn} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button">
+                      {user?.avatar
+                        ? <Image src={user.avatar} alt="Аватар" width={64} height={64} className={styles.userAvatarImg} />
+                        : <span className={styles.profileAvatarInitial}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
+                      <span className={styles.userAvatarOverlay}>
+                        {avatarUploading ? <span className={styles.avatarSpinner} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>}
+                      </span>
+                    </button>
+                    <div className={styles.profileIdentity}>
+                      <span className={styles.profileName}>{user?.name}</span>
+                      <span className={styles.profileEmail}>{user?.email}</span>
+                      <div className={styles.profileBadges}>
+                        <span className={`${styles.profilePlanBadge} ${user?.plan === "pro" ? styles.profilePlanBadgePro : ""}`}>
+                          {user?.plan === "pro" ? "Pro" : "Free"}
+                        </span>
+                        {user?.plan !== "pro" && <Link href="/#pricing" className={styles.upgradeLink}>Улучшить план →</Link>}
+                      </div>
+                    </div>
+                    {user?.avatar && (
+                      <button className={styles.removeAvatarBtn} onClick={handleAvatarRemove} type="button">Удалить фото</button>
+                    )}
+                  </div>
+
+                  <div className={styles.settingsDivider} />
+
                   <div className={styles.formGrid}>
                     <div className={styles.inputWrapper}>
                       <label className={styles.inputLabel}>Отображаемое имя</label>
@@ -699,9 +729,6 @@ export default function DashboardPage() {
                       <input className={styles.roleInput} type="email" value={user?.email ?? ""} readOnly />
                     </div>
                   </div>
-                  <span className={styles.metaLine}>
-                    Зарегистрирован: {user?.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : "—"}
-                  </span>
                   {profileError && <div className={`${styles.formMsg} ${styles.formMsgError}`}>{profileError}</div>}
                   {profileMsg  && <div className={`${styles.formMsg} ${styles.formMsgOk}`}>{profileMsg}</div>}
                   <div className={styles.formActions}>
@@ -712,6 +739,7 @@ export default function DashboardPage() {
                 </div>
               </section>
 
+              {/* Password */}
               <section className={styles.recentSection}>
                 <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Смена пароля</h3></div>
                 <div className={styles.settingsCard}>
