@@ -12,8 +12,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: number; email: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+// Default 7d keeps web cookie sessions long-lived. Desktop access tokens pass a
+// short expiry (see lib/refresh.ts) and are renewed via POST /api/auth/refresh.
+export function signToken(
+  payload: { userId: number; email: string },
+  expiresIn: string | number = JWT_EXPIRES
+): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: expiresIn as jwt.SignOptions["expiresIn"] });
 }
 
 export function verifyToken(token: string): { userId: number; email: string } | null {

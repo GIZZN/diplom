@@ -108,6 +108,22 @@ export async function runMigrations() {
 
       ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user';
+
+      -- Opaque refresh tokens for desktop sliding sessions.
+      -- Rotation on every use; reuse of a consumed token revokes the whole family.
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- jti
+        user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        family_id   UUID NOT NULL,                                -- chain for reuse-detection
+        token_hash  TEXT NOT NULL UNIQUE,                         -- sha256(raw refresh token)
+        used        BOOLEAN NOT NULL DEFAULT false,               -- consumed by a rotation
+        revoked     BOOLEAN NOT NULL DEFAULT false,               -- family-level kill switch
+        expires_at  TIMESTAMPTZ NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS refresh_tokens_hash_idx   ON refresh_tokens (token_hash);
+      CREATE INDEX IF NOT EXISTS refresh_tokens_family_idx ON refresh_tokens (family_id);
+      CREATE INDEX IF NOT EXISTS refresh_tokens_user_idx   ON refresh_tokens (user_id);
     `);
 
     console.log("✓ Migrations applied");

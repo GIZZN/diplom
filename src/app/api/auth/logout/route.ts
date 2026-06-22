@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
+import { revokeUserRefreshTokens } from "@/lib/refresh";
 import { getCorsHeaders } from "@/lib/cors";
 
 function getJwt(req: NextRequest): string | null {
@@ -23,10 +24,12 @@ export async function POST(req: NextRequest) {
     const payload = verifyToken(token);
     if (payload) {
       try {
+        // Kill JWT sessions (via iat check in /api/auth/me) AND every refresh family.
         await pool.query(
           "UPDATE users SET token_revoked_before = NOW() WHERE id = $1",
           [payload.userId]
         );
+        await revokeUserRefreshTokens(payload.userId);
       } catch (err) {
         console.error("Logout revocation error:", err);
       }

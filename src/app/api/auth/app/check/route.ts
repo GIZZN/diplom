@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { issueRefreshToken, ACCESS_TOKEN_TTL } from "@/lib/refresh";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -53,9 +54,11 @@ export async function GET(req: NextRequest) {
         [token]
       );
 
-      const jwt = signToken({ userId: user.id, email: user.email });
+      // Short-lived access JWT + opaque refresh token (sliding session).
+      const jwt = signToken({ userId: user.id, email: user.email }, ACCESS_TOKEN_TTL);
+      const refresh_token = await issueRefreshToken(user.id);
       return NextResponse.json(
-        { status: "approved", jwt, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } },
+        { status: "approved", jwt, refresh_token, user: { id: user.id, name: user.name, email: user.email, avatar: user.avatar } },
         { headers: CORS_HEADERS }
       );
     }
