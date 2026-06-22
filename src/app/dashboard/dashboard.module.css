@@ -449,10 +449,15 @@
 }
 
 .formGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 420px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .formActions {
@@ -495,7 +500,7 @@
 /* ─── Settings: inputs full width inside card ─────────────────────────────── */
 
 .settingsCard .inputWrapper {
-  max-width: 420px;
+  max-width: none;
 }
 
 .settingsCard .roleInput[readonly] {
@@ -611,25 +616,27 @@
 .barChart {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
-  height: 110px;
+  justify-content: flex-start;
+  gap: 14px;
+  height: 132px;
 }
 
 .barCol {
-  flex: 1;
+  flex: 1 1 0;
+  max-width: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 100%;
   justify-content: flex-end;
 }
 
 .bar {
   width: 100%;
-  max-width: 28px;
+  max-width: none;
   background: var(--accent);
-  border-radius: 3px 3px 0 0;
+  border-radius: 4px 4px 0 0;
   transition: height 0.3s ease;
   min-height: 4px;
 }
@@ -910,6 +917,15 @@
 .roleInput:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.roleInput:-webkit-autofill,
+.roleInput:-webkit-autofill:hover,
+.roleInput:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-tertiary) inset;
+  caret-color: var(--text-primary);
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 .startBtn {
