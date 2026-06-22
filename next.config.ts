@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 // Desktop installers served from /public. Force a clean download (attachment)
 // even when the URL is opened directly, not just via the <a download> button.
 const DOWNLOADS = [
-  "/Interview_Assistant_0.1.0_x64_en-US.msi",
+  "/Interview Assistant_0.1.0_x64-setup.exe",
   "/IntrviwAssistant.exe",
 ];
 

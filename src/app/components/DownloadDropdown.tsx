@@ -7,7 +7,7 @@ const FILES = [
   {
     label: "Installer (.msi)",
     sub: "Установщик с ярлыком",
-    href: "/Interview_Assistant_0.1.0_x64_en-US.msi",
+    href: "/Interview Assistant_0.1.0_x64-setup.exe",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2v13M5 15l7 7 7-7" /><path d="M3 21h18" />
