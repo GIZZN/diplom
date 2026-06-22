@@ -388,7 +388,7 @@ export default function DashboardPage() {
                 aria-current={activeNav === item.id ? "page" : undefined}
               >
                 <span className={styles.navIcon}>{item.icon}</span>
-                <span>{item.label}</span>
+                <span className={styles.navLabel}>{item.label}</span>
               </button>
             ))}
           </nav>

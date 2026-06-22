@@ -91,6 +91,14 @@
   opacity: 0.85;
 }
 
+.navLabel {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .navItemActive .navIcon {
   opacity: 1;
 }
@@ -1323,5 +1331,128 @@
   .sessionsTableRow span:nth-child(3),
   .sessionsTableRow span:nth-child(4) {
     display: none;
+  }
+}
+
+/* ─── Sidebar responsive collapse ─────────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .sidebar {
+    width: 64px;
+    min-width: 64px;
+    padding: 20px 8px;
+  }
+
+  .logoText { display: none; }
+
+  .navItem {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+  }
+
+  .navLabel { display: none; }
+
+  .navIcon { opacity: 1; }
+
+  .userInfo {
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    gap: 0;
+  }
+
+  .userMeta { display: none; }
+
+  .adminBtn {
+    justify-content: center;
+    padding: 8px;
+    min-width: 0;
+  }
+  .adminBtn span { display: none; }
+
+  .logoutBtn {
+    justify-content: center;
+    padding: 8px;
+  }
+  .logoutBtn span { display: none; }
+
+  .skeletonSidebar {
+    width: 64px;
+    min-width: 64px;
+  }
+}
+
+@media (max-width: 600px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    flex-direction: row;
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    justify-content: space-between;
+  }
+
+  .sidebarTop {
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .logoRow { display: none; }
+
+  .nav {
+    flex-direction: row;
+    gap: 0;
+    flex: 1;
+    justify-content: space-around;
+  }
+
+  .navItem {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 8px;
+    font-size: 10px;
+    align-items: center;
+  }
+
+  .navLabel {
+    display: block;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .sidebarBottom {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .userInfo {
+    flex-direction: row;
+    padding: 4px 6px;
+    gap: 0;
+  }
+
+  .adminBtn span,
+  .logoutBtn span { display: none; }
+
+  .adminBtn,
+  .logoutBtn {
+    justify-content: center;
+    padding: 6px 8px;
+  }
+
+  .main {
+    height: 0;
+    flex: 1;
   }
 }
