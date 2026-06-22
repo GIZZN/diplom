@@ -5,7 +5,7 @@ import styles from "./DownloadDropdown.module.css";
 
 const FILES = [
   {
-    label: "Installer (.msi)",
+    label: "Installer (.setup)",
     sub: "Установщик с ярлыком",
     href: "/Interview Assistant_0.1.0_x64-setup.exe",
     icon: (
