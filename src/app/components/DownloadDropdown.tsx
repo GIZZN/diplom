@@ -5,22 +5,22 @@ import styles from "./DownloadDropdown.module.css";
 
 const FILES = [
   {
-    label: "Portable (.exe)",
-    sub: "Запуск без установки",
-    href: "/Intrviw%20Assistant.exe",
+    label: "Installer (.msi)",
+    sub: "Установщик с ярлыком",
+    href: "/Interview_Assistant_0.1.0_x64_en-US.msi",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7" />
+        <path d="M12 2v13M5 15l7 7 7-7" /><path d="M3 21h18" />
       </svg>
     ),
   },
   {
-    label: "Installer (.exe)",
-    sub: "Установщик с ярлыком",
-    href: "/Intrviw_Assistant_0.1.0_x64-setup.exe",
+    label: "Portable (.exe)",
+    sub: "Запуск без установки",
+    href: "/IntrviwAssistant.exe",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v13M5 15l7 7 7-7" /><path d="M3 21h18" />
+        <path d="M5 12h14M12 5l7 7-7 7" />
       </svg>
     ),
   },
