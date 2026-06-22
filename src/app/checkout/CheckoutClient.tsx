@@ -106,6 +106,12 @@ export default function CheckoutClient({ plan, email }: { plan: CheckoutPlan; em
   async function handlePay() {
     setError(null);
     setPaying(true);
+
+    // Open the tab synchronously INSIDE the click gesture. If we wait until after
+    // the awaited fetch, the browser has lost user-activation and strands the tab
+    // on about:blank (most visible in prod, where the API call has real latency).
+    const payWindow = window.open("", "_blank");
+
     try {
       const res = await fetch("/api/payments/create-invoice", {
         method: "POST",
@@ -113,20 +119,30 @@ export default function CheckoutClient({ plan, email }: { plan: CheckoutPlan; em
         body: JSON.stringify({ plan: plan.id }),
       });
       if (res.status === 401) {
+        payWindow?.close();
         router.replace(`/auth?redirect=${encodeURIComponent(`/checkout?plan=${plan.id}`)}`);
         return;
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.url) {
+        payWindow?.close();
         setError(data.error ?? "Не удалось создать счёт. Попробуйте ещё раз.");
         setPaying(false);
         return;
       }
-      window.open(data.url, "_blank", "noopener");
+      if (payWindow) {
+        payWindow.opener = null; // sever reverse-tabnabbing before navigating
+        payWindow.location.href = data.url;
+      } else {
+        // Popup was blocked — fall back to navigating the current tab.
+        window.location.href = data.url;
+        return;
+      }
       setPaying(false);
       setWaiting(true);
       startPolling();
     } catch {
+      payWindow?.close();
       setError("Ошибка соединения. Проверьте интернет и повторите.");
       setPaying(false);
     }

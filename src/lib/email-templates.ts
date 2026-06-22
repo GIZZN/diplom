@@ -2,7 +2,7 @@
 // которые вырезают <style> и внешний CSS — поэтому ВСЕ стили строго инлайновые,
 // вёрстка на таблицах. Палитра повторяет тему приложения (тёмный фон + мятный акцент).
 
-const BG = "#050607";
+
 const CARD = "#0c0d0f";
 const ELEVATED = "#131517";
 const BORDER = "rgba(255,255,255,0.08)";
@@ -25,13 +25,13 @@ export function otpCodeEmail(code: string, minutes = 5): string {
 <meta name="color-scheme" content="dark" />
 <title>Код подтверждения</title>
 </head>
-<body style="margin:0;padding:0;background:${BG};">
+<body style="margin:0;padding:0;background;">
   <!-- прехедер (скрытый превью-текст) -->
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${BG};font-size:1px;line-height:1px;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color;font-size:1px;line-height:1px;">
     Ваш код входа: ${code}. Действует ${minutes} минут.
   </div>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BG};padding:40px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background;padding:40px 16px;">
     <tr>
       <td align="center">
         <table role="presentation" width="460" cellpadding="0" cellspacing="0" border="0" style="width:460px;max-width:100%;background:${CARD};border:1px solid ${BORDER};border-radius:16px;overflow:hidden;">
