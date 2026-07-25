@@ -4,10 +4,39 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Activity,
+  ArrowRight,
+  ArrowUpRight,
+  BarChart3,
+  Bug,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Clock,
+  Cpu,
+  Download,
+  HelpCircle,
+  ImageIcon,
+  KeyRound,
+  LayoutGrid,
+  LifeBuoy,
+  Loader2,
+  LogOut,
+  Mail,
+  MessageSquare,
+  Mic,
+  Plus,
+  Settings,
+  Shield,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  User as UserIcon,
+} from "lucide-react";
 import styles from "./dashboard.module.css";
 import DownloadDropdown from "../components/DownloadDropdown";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface User {
   id: number;
@@ -44,171 +73,250 @@ interface Analytics {
 
 type NavItem = "dashboard" | "sessions" | "analytics" | "settings" | "help";
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-function Logo({ size = 28 }: { size?: number }) {
+const NAV: { id: NavItem; label: string; icon: typeof LayoutGrid }[] = [
+  { id: "dashboard", label: "Обзор", icon: LayoutGrid },
+  { id: "sessions", label: "Сессии", icon: MessageSquare },
+  { id: "analytics", label: "Аналитика", icon: BarChart3 },
+  { id: "settings", label: "Настройки", icon: Settings },
+  { id: "help", label: "Помощь", icon: HelpCircle },
+];
+
+const PAGE_META: Record<NavItem, { title: string; sub: string }> = {
+  dashboard: { title: "Обзор", sub: "Сводка активности и быстрый доступ к приложению" },
+  sessions: { title: "Сессии", sub: "История вопросов и ответов из desktop-приложения" },
+  analytics: { title: "Аналитика", sub: "Динамика использования и распределение по типам" },
+  settings: { title: "Настройки", sub: "Профиль, аккаунт и безопасность" },
+  help: { title: "Помощь", sub: "Начало работы, горячие клавиши и поддержка" },
+};
+
+const SESSION_TYPES: Record<string, { label: string; icon: typeof Mic }> = {
+  live_answer: { label: "Голос", icon: Mic },
+  screen_analysis: { label: "Экран", icon: ImageIcon },
+  chat_message: { label: "Чат", icon: MessageSquare },
+};
+
+function Logo({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="0" y="0" width="32" height="32" rx="8" fill="white" />
+      <rect width="32" height="32" rx="8" fill="white" />
       <circle cx="16" cy="16" r="7" fill="black" />
     </svg>
   );
 }
 
-function IconDashboard({ active }: { active?: boolean }) {
-  const c = active ? "var(--accent)" : "currentColor";
+function typeMeta(type: string) {
+  return SESSION_TYPES[type] ?? { label: type, icon: MessageSquare };
+}
+
+function shortModel(model: string | null) {
+  if (!model) return "—";
+  return model.split("/").pop()?.split(":")[0] ?? model;
+}
+
+function seconds(ms: number | null) {
+  return ms ? `${(ms / 1000).toFixed(1)}с` : "—";
+}
+
+function Fade({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="1" y="1" width="6" height="6" rx="1.5" stroke={c} strokeWidth="1.4" />
-      <rect x="9" y="1" width="6" height="6" rx="1.5" stroke={c} strokeWidth="1.4" />
-      <rect x="1" y="9" width="6" height="6" rx="1.5" stroke={c} strokeWidth="1.4" />
-      <rect x="9" y="9" width="6" height="6" rx="1.5" stroke={c} strokeWidth="1.4" />
-    </svg>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay, ease: EASE }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
-function IconSessions({ active }: { active?: boolean }) {
-  const c = active ? "var(--accent)" : "currentColor";
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: string | number;
+  hint?: string;
+}) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M2 3.5C2 2.67 2.67 2 3.5 2h9C13.33 2 14 2.67 14 3.5v7c0 .83-.67 1.5-1.5 1.5H9l-3 2v-2H3.5C2.67 14 2 13.33 2 12.5v-9z" stroke={c} strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M5 6h6M5 9h4" stroke={c} strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconAnalytics({ active }: { active?: boolean }) {
-  const c = active ? "var(--accent)" : "currentColor";
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M2 13L5.5 8.5L8.5 10.5L12 5L14 7" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2 13h12" stroke={c} strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconSettings({ active }: { active?: boolean }) {
-  const c = active ? "var(--accent)" : "currentColor";
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="2.5" stroke={c} strokeWidth="1.4" />
-      <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.93 2.93l1.06 1.06M12.01 12.01l1.06 1.06M2.93 13.07l1.06-1.06M12.01 3.99l1.06-1.06" stroke={c} strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconHelp({ active }: { active?: boolean }) {
-  const c = active ? "var(--accent)" : "currentColor";
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.4" />
-      <path d="M6 6.2c0-1.1.9-2 2-2s2 .9 2 2c0 .9-.6 1.6-1.4 1.9C8.2 8.3 8 8.6 8 9v.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" />
-      <circle cx="8" cy="11.5" r=".75" fill={c} />
-    </svg>
-  );
-}
-
-function IconAdmin() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 3l8 4v5c0 4.42-3.37 8.56-8 9.93C7.37 20.56 4 16.42 4 12V7l8-4z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconLogout() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-      <path d="M5.5 2H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-      <path d="M10 10l3-2.5L10 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 7.5H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconDownload() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2 12h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconPlus() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconArrow() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function IconMic() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    </svg>
-  );
-}
-
-function IconScreen() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2" />
-      <path d="M8 21h8M12 17v4" />
-    </svg>
-  );
-}
-
-function IconChat() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function SessionTypeIcon({ type }: { type: string }) {
-  if (type === "live_answer") return <IconMic />;
-  if (type === "screen_analysis") return <IconScreen />;
-  return <IconChat />;
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function Skeleton() {
-  return (
-    <div className={styles.skeleton}>
-      <div className={styles.skeletonSidebar}>
-        <div className={styles.skeletonBlock} style={{ width: 120, height: 24, marginBottom: 32 }} />
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className={styles.skeletonBlock} style={{ width: "80%", height: 16, marginBottom: 12 }} />
-        ))}
-      </div>
-      <div className={styles.skeletonMain}>
-        <div className={styles.skeletonBlock} style={{ width: 200, height: 28, marginBottom: 8 }} />
-        <div className={styles.skeletonBlock} style={{ width: 300, height: 16, marginBottom: 32 }} />
-        <div className={styles.skeletonRow}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} className={styles.skeletonBlock} style={{ flex: 1, height: 80 }} />
-          ))}
-        </div>
-      </div>
+    <div className={styles.statCard}>
+      <span className={styles.statIcon}>
+        <Icon size={15} strokeWidth={1.9} />
+      </span>
+      <span className={styles.statLabel}>{label}</span>
+      <span className={styles.statValue}>{value}</span>
+      {hint && <span className={styles.statHint}>{hint}</span>}
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+function SectionHead({
+  title,
+  action,
+}: {
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className={styles.sectionHead}>
+      <h3 className={styles.sectionTitle}>{title}</h3>
+      {action}
+    </div>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: typeof MessageSquare;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className={styles.empty}>
+      <span className={styles.emptyIcon}>
+        <Icon size={20} strokeWidth={1.7} />
+      </span>
+      <span className={styles.emptyTitle}>{title}</span>
+      <span className={styles.emptyText}>{text}</span>
+    </div>
+  );
+}
+
+function SessionRow({
+  session,
+  expandable = false,
+  expanded = false,
+  onToggle,
+}: {
+  session: DesktopSession;
+  expandable?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
+}) {
+  const { label, icon: Icon } = typeMeta(session.type);
+
+  return (
+    <div className={`${styles.row} ${expanded ? styles.rowOpen : ""}`}>
+      <button
+        className={styles.rowHead}
+        onClick={onToggle}
+        type="button"
+        disabled={!expandable}
+        aria-expanded={expandable ? expanded : undefined}
+      >
+        <span className={styles.rowType}>
+          <Icon size={13} strokeWidth={2} />
+          {label}
+        </span>
+        <span className={styles.rowQuestion}>{session.question || "Без вопроса"}</span>
+        <span className={styles.rowModel}>{shortModel(session.model)}</span>
+        <span className={styles.rowTime}>{seconds(session.response_time_ms)}</span>
+        <span className={styles.rowDate}>
+          {new Date(session.created_at).toLocaleString("ru-RU", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+        {expandable && (
+          <span className={styles.rowChevron}>
+            <ChevronDown size={15} strokeWidth={2} />
+          </span>
+        )}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            className={styles.rowBody}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
+          >
+            <div className={styles.rowBodyInner}>
+              {session.question && (
+                <div className={styles.qa}>
+                  <span className={styles.qaLabel}>Вопрос</span>
+                  <p className={styles.qaText}>{session.question}</p>
+                </div>
+              )}
+              {session.answer && (
+                <div className={styles.qa}>
+                  <span className={styles.qaLabel}>Ответ</span>
+                  <p className={styles.qaText}>{session.answer}</p>
+                </div>
+              )}
+              {session.tokens_used && (
+                <span className={styles.qaMeta}>{session.tokens_used} токенов</span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TableHead() {
+  return (
+    <div className={styles.tableHead}>
+      <span>Тип</span>
+      <span>Вопрос</span>
+      <span>Модель</span>
+      <span>Время</span>
+      <span>Дата</span>
+      <span />
+    </div>
+  );
+}
+
+function Skeleton() {
+  return (
+    <div className={styles.layout}>
+      <aside className={styles.sidebar}>
+        <div className={styles.sidebarTop}>
+          <div className={styles.logoRow}>
+            <Logo />
+            <span className={styles.logoText}>
+              interview<span className={styles.logoDot}>.</span>ai
+            </span>
+          </div>
+          <div className={styles.nav}>
+            {NAV.map((n) => (
+              <span key={n.id} className={styles.skelNav} />
+            ))}
+          </div>
+        </div>
+      </aside>
+      <main className={styles.main}>
+        <div className={styles.content}>
+          <span className={styles.skelTitle} />
+          <div className={styles.statsRow}>
+            {[0, 1, 2].map((i) => (
+              <span key={i} className={styles.skelCard} />
+            ))}
+          </div>
+          <span className={styles.skelBlock} />
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -218,11 +326,13 @@ export default function DashboardPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Dashboard
   const [desktopSessions, setDesktopSessions] = useState<DesktopSession[]>([]);
-  const [desktopStats, setDesktopStats] = useState({ total: 0, today: 0, avg_response_ms: null as number | null });
+  const [desktopStats, setDesktopStats] = useState({
+    total: 0,
+    today: 0,
+    avg_response_ms: null as number | null,
+  });
 
-  // Sessions tab
   const [sessionFilter, setSessionFilter] = useState("all");
   const [allSessions, setAllSessions] = useState<DesktopSession[]>([]);
   const [sessionsOffset, setSessionsOffset] = useState(0);
@@ -230,11 +340,9 @@ export default function DashboardPage() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [expandedSession, setExpandedSession] = useState<number | null>(null);
 
-  // Analytics tab
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
-  // Settings tab
   const [profileName, setProfileName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -246,7 +354,10 @@ export default function DashboardPage() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data) => {
-        if (!data.user) { router.replace("/auth"); return; }
+        if (!data.user) {
+          router.replace("/auth");
+          return;
+        }
         setUser(data.user);
         setProfileName(data.user.name);
         setLoading(false);
@@ -262,9 +373,18 @@ export default function DashboardPage() {
         if (!d.sessions) return;
         setDesktopSessions(d.sessions);
         const today = new Date().toDateString();
-        const todayCount = d.sessions.filter((s: DesktopSession) => new Date(s.created_at).toDateString() === today).length;
+        const todayCount = d.sessions.filter(
+          (s: DesktopSession) => new Date(s.created_at).toDateString() === today,
+        ).length;
         const withTime = d.sessions.filter((s: DesktopSession) => s.response_time_ms);
-        const avgMs = withTime.length ? Math.round(withTime.reduce((a: number, s: DesktopSession) => a + (s.response_time_ms ?? 0), 0) / withTime.length) : null;
+        const avgMs = withTime.length
+          ? Math.round(
+              withTime.reduce(
+                (a: number, s: DesktopSession) => a + (s.response_time_ms ?? 0),
+                0,
+              ) / withTime.length,
+            )
+          : null;
         setDesktopStats({ total: d.sessions.length, today: todayCount, avg_response_ms: avgMs });
       })
       .catch(() => {});
@@ -272,14 +392,15 @@ export default function DashboardPage() {
 
   async function loadSessions(filter = "all", offset = 0, append = false) {
     setSessionsLoading(true);
-    const url = filter === "all"
-      ? `/api/desktop/sessions?limit=20&offset=${offset}`
-      : `/api/desktop/sessions?limit=20&offset=${offset}&type=${filter}`;
+    const url =
+      filter === "all"
+        ? `/api/desktop/sessions?limit=20&offset=${offset}`
+        : `/api/desktop/sessions?limit=20&offset=${offset}&type=${filter}`;
     try {
       const res = await fetch(url);
       const d = await res.json();
       if (d.sessions) {
-        setAllSessions(prev => append ? [...prev, ...d.sessions] : d.sessions);
+        setAllSessions((prev) => (append ? [...prev, ...d.sessions] : d.sessions));
         setSessionsHasMore(d.sessions.length === 20);
         setSessionsOffset(offset + d.sessions.length);
       }
@@ -320,7 +441,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch("/api/auth/avatar", { method: "POST", body: formData });
       const data = await res.json();
-      if (res.ok) setUser((u) => u ? { ...u, avatar: data.avatar } : u);
+      if (res.ok) setUser((u) => (u ? { ...u, avatar: data.avatar } : u));
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -329,7 +450,7 @@ export default function DashboardPage() {
 
   async function handleAvatarRemove() {
     await fetch("/api/auth/avatar", { method: "DELETE" });
-    setUser((u) => u ? { ...u, avatar: null } : u);
+    setUser((u) => (u ? { ...u, avatar: null } : u));
   }
 
   async function handleProfileSave() {
@@ -338,8 +459,15 @@ export default function DashboardPage() {
     setProfileError("");
     const body: Record<string, string> = {};
     if (profileName.trim() !== user?.name) body.name = profileName.trim();
-    if (newPassword) { body.current_password = currentPassword; body.new_password = newPassword; }
-    if (!Object.keys(body).length) { setProfileError("Нет изменений"); setProfileSaving(false); return; }
+    if (newPassword) {
+      body.current_password = currentPassword;
+      body.new_password = newPassword;
+    }
+    if (!Object.keys(body).length) {
+      setProfileError("Нет изменений");
+      setProfileSaving(false);
+      return;
+    }
     try {
       const res = await fetch("/api/auth/profile", {
         method: "PUT",
@@ -347,470 +475,784 @@ export default function DashboardPage() {
         body: JSON.stringify(body),
       });
       const d = await res.json();
-      if (!res.ok) { setProfileError(d.error ?? "Ошибка"); return; }
-      setUser((u) => u ? { ...u, name: d.user.name } : u);
+      if (!res.ok) {
+        setProfileError(d.error ?? "Ошибка");
+        return;
+      }
+      setUser((u) => (u ? { ...u, name: d.user.name } : u));
       setProfileMsg("Сохранено");
       setCurrentPassword("");
       setNewPassword("");
-    } catch { setProfileError("Ошибка соединения"); }
-    finally { setProfileSaving(false); }
+    } catch {
+      setProfileError("Ошибка соединения");
+    } finally {
+      setProfileSaving(false);
+    }
   }
 
   if (loading) return <Skeleton />;
 
   const firstName = user?.name?.split(" ")[0] ?? "Пользователь";
-  const navItems: { id: NavItem; label: string; icon: React.ReactNode }[] = [
-    { id: "dashboard", label: "Dashboard",  icon: <IconDashboard active={activeNav === "dashboard"} /> },
-    { id: "sessions",  label: "Sessions",   icon: <IconSessions  active={activeNav === "sessions"}  /> },
-    { id: "analytics", label: "Analytics",  icon: <IconAnalytics active={activeNav === "analytics"} /> },
-    { id: "settings",  label: "Settings",   icon: <IconSettings  active={activeNav === "settings"}  /> },
-    { id: "help",      label: "Help",        icon: <IconHelp      active={activeNav === "help"}      /> },
-  ];
-
-  const NAV_TITLE: Record<NavItem, string> = {
-    dashboard: "Dashboard", sessions: "Sessions", analytics: "Analytics", settings: "Settings", help: "Help",
-  };
+  const isPro = user?.plan === "pro";
+  const meta = PAGE_META[activeNav];
 
   return (
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarTop}>
           <Link href="/" className={styles.logoRow}>
-            <Logo size={28} /><span className={styles.logoText}>interview.ai</span>
+            <Logo />
+            <span className={styles.logoText}>
+              interview<span className={styles.logoDot}>.</span>ai
+            </span>
           </Link>
-          <nav className={styles.nav} aria-label="Main navigation">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                className={`${styles.navItem} ${activeNav === item.id ? styles.navItemActive : ""}`}
-                onClick={() => handleNavClick(item.id)}
-                type="button"
-                aria-current={activeNav === item.id ? "page" : undefined}
-              >
-                <span className={styles.navIcon}>{item.icon}</span>
-                <span className={styles.navLabel}>{item.label}</span>
-              </button>
-            ))}
+
+          <nav className={styles.nav} aria-label="Разделы">
+            {NAV.map(({ id, label, icon: Icon }) => {
+              const active = activeNav === id;
+              return (
+                <button
+                  key={id}
+                  className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
+                  onClick={() => handleNavClick(id)}
+                  type="button"
+                  aria-current={active ? "page" : undefined}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="navActive"
+                      className={styles.navActiveBg}
+                      transition={{ duration: 0.28, ease: EASE }}
+                    />
+                  )}
+                  <Icon size={16} strokeWidth={1.9} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
         <div className={styles.sidebarBottom}>
-          <div className={styles.userInfo}>
-            <button className={styles.userAvatarBtn} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button" aria-label="Загрузить аватар">
-              {user?.avatar
-                ? <Image src={user.avatar} alt="Аватар" width={32} height={32} className={styles.userAvatarImg} />
-                : <span className={styles.userAvatarInitial}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
-              <span className={styles.userAvatarOverlay}>
-                {avatarUploading
-                  ? <span className={styles.avatarSpinner} />
-                  : <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>}
+          {!isPro && (
+            <div className={styles.upsell}>
+              <span className={styles.upsellIcon}>
+                <Sparkles size={14} strokeWidth={2} />
+              </span>
+              <span className={styles.upsellTitle}>Тариф Free</span>
+              <span className={styles.upsellText}>
+                Безлимитные сессии и приоритетные модели — в Pro.
+              </span>
+              <Link href="/#pricing" className={styles.upsellBtn}>
+                Улучшить план
+                <ArrowRight size={13} strokeWidth={2.2} />
+              </Link>
+            </div>
+          )}
+
+          <div className={styles.userCard}>
+            <button
+              className={styles.avatarBtn}
+              onClick={() => fileInputRef.current?.click()}
+              title="Сменить аватар"
+              type="button"
+            >
+              {user?.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt=""
+                  width={34}
+                  height={34}
+                  className={styles.avatarImg}
+                />
+              ) : (
+                <span className={styles.avatarInitial}>
+                  {user?.name?.charAt(0).toUpperCase() ?? "U"}
+                </span>
+              )}
+              <span className={styles.avatarOverlay}>
+                {avatarUploading ? (
+                  <Loader2 size={13} className={styles.spinner} />
+                ) : (
+                  <Plus size={13} strokeWidth={2.4} />
+                )}
               </span>
             </button>
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className={styles.fileInput} onChange={handleAvatarChange} aria-hidden="true" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className={styles.fileInput}
+              onChange={handleAvatarChange}
+            />
             <div className={styles.userMeta}>
               <span className={styles.userName}>{user?.name}</span>
-              <span className={`${styles.planBadge} ${user?.plan === "pro" ? styles.planBadgePro : ""}`}>
-                {user?.plan === "pro" ? "Pro" : "Free"}
-              </span>
-              {user?.plan === "pro" && user.pro_expires_at && (
-                <span className={styles.planExpiry}>до {new Date(user.pro_expires_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}</span>
-              )}
-              {user?.avatar && (
-                <button className={styles.removeAvatarBtn} onClick={handleAvatarRemove} type="button">Удалить фото</button>
-              )}
+              <span className={styles.userEmail}>{user?.email}</span>
             </div>
+            <span className={`${styles.plan} ${isPro ? styles.planPro : ""}`}>
+              {isPro ? "Pro" : "Free"}
+            </span>
           </div>
+
           {user?.role === "admin" && (
-            <Link href="/admin" className={styles.adminBtn}>
-              <IconAdmin /><span>Admin Panel</span>
+            <Link href="/admin" className={styles.sideLink}>
+              <Shield size={15} strokeWidth={1.9} />
+              Админ-панель
             </Link>
           )}
-          <button className={styles.logoutBtn} onClick={handleLogout} type="button" aria-label="Выйти из аккаунта">
-            <IconLogout /><span>Выйти</span>
+          <button className={styles.sideLink} onClick={handleLogout} type="button">
+            <LogOut size={15} strokeWidth={1.9} />
+            Выйти
           </button>
         </div>
       </aside>
 
       <main className={styles.main}>
         <header className={styles.topBar}>
-          <h1 className={styles.pageTitle}>{NAV_TITLE[activeNav]}</h1>
-          {activeNav === "dashboard" && (
-            <button className={styles.newSessionBtn} type="button">
-              <IconPlus /><span>Новая сессия</span>
-            </button>
-          )}
+          <div>
+            <h1 className={styles.pageTitle}>{meta.title}</h1>
+            <p className={styles.pageSub}>{meta.sub}</p>
+          </div>
+          <DownloadDropdown
+            align="right"
+            trigger={
+              <span className={styles.primaryBtn}>
+                <Download size={15} strokeWidth={2} />
+                Скачать приложение
+              </span>
+            }
+          />
         </header>
 
         <div className={styles.content}>
-
-          {/* ─── DASHBOARD ─── */}
           {activeNav === "dashboard" && (
             <>
-              <section className={styles.welcome}>
-                <h2 className={styles.welcomeTitle}>Добро пожаловать, {firstName}</h2>
-                <p className={styles.welcomeSub}>Готовы к следующему интервью? Начните сессию или просмотрите прогресс.</p>
-              </section>
-
-              <section className={styles.statsRow} aria-label="Статистика">
-                {[
-                  { label: "Сессий сегодня", value: desktopStats.today },
-                  { label: "Всего сессий",   value: desktopStats.total },
-                  { label: "Среднее время",   value: desktopStats.avg_response_ms ? `${(desktopStats.avg_response_ms / 1000).toFixed(1)}с` : "—" },
-                ].map((s) => (
-                  <div key={s.label} className={styles.statCard}>
-                    <span className={styles.statLabel}>{s.label}</span>
-                    <span className={styles.statValue}>{s.value}</span>
+              <Fade>
+                <section className={styles.hero}>
+                  <div className={styles.heroGlow} aria-hidden="true" />
+                  <div className={styles.heroText}>
+                    <span className={styles.heroEyebrow}>
+                      <Sparkles size={12} strokeWidth={2.2} />
+                      Рабочее место
+                    </span>
+                    <h2 className={styles.heroTitle}>Привет, {firstName}</h2>
+                    <p className={styles.heroSub}>
+                      Запустите desktop-приложение и начните сессию — история и статистика
+                      появятся здесь автоматически.
+                    </p>
                   </div>
-                ))}
-              </section>
-
-              <section className={styles.quickStart}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Быстрый старт</h3></div>
-                <div className={styles.quickStartCard}>
-                  <p className={styles.quickStartDesc}>Запустите desktop-приложение, войдите в аккаунт и начните практическую сессию прямо сейчас.</p>
-                  <div className={styles.quickStartForm}>
-                    <DownloadDropdown align="left" trigger={
-                      <button className={styles.startBtn} type="button"><span>Скачать приложение</span><IconArrow /></button>
-                    } />
+                  <div className={styles.heroActions}>
+                    <DownloadDropdown
+                      align="left"
+                      trigger={
+                        <span className={styles.primaryBtn}>
+                          Скачать для Windows
+                          <ArrowRight size={15} strokeWidth={2.2} />
+                        </span>
+                      }
+                    />
+                    <button
+                      className={styles.ghostBtn}
+                      onClick={() => handleNavClick("help")}
+                      type="button"
+                    >
+                      Как начать
+                    </button>
                   </div>
-                </div>
-              </section>
+                </section>
+              </Fade>
 
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}>
-                  <h3 className={styles.sectionTitle}>Последние сессии</h3>
-                  <button className={styles.viewAllBtn} onClick={() => handleNavClick("sessions")}>Все сессии →</button>
-                </div>
-                {desktopSessions.length === 0 ? (
-                  <div className={styles.emptyState}>Сессий пока нет. Запустите приложение и начните практику.</div>
-                ) : (
-                  <div className={styles.sessionsTable}>
-                    <div className={styles.sessionsTableHead}><span>Тип</span><span>Вопрос</span><span>Ответ</span><span>Модель</span><span>Время</span><span>Дата</span></div>
-                    {desktopSessions.slice(0, 5).map((s) => (
-                      <div key={s.id} className={styles.sessionsTableRow}>
-                        <span className={styles.desktopTypeIcon}><SessionTypeIcon type={s.type} /></span>
-                        <span className={styles.tableCell} title={s.question ?? ""}>{s.question ? s.question.slice(0, 60) + (s.question.length > 60 ? "…" : "") : "—"}</span>
-                        <span className={styles.tableCell} title={s.answer ?? ""}>{s.answer ? s.answer.slice(0, 80) + (s.answer.length > 80 ? "…" : "") : "—"}</span>
-                        <span className={styles.tableCellMono}>{s.model?.split("/").pop()?.split(":")[0] ?? "—"}</span>
-                        <span className={styles.tableCellMono}>{s.response_time_ms ? `${(s.response_time_ms / 1000).toFixed(1)}с` : "—"}</span>
-                        <span className={styles.tableCellMuted}>{new Date(s.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+              <Fade delay={0.06}>
+                <section className={styles.statsRow}>
+                  <StatCard
+                    icon={Activity}
+                    label="Сессий сегодня"
+                    value={desktopStats.today}
+                  />
+                  <StatCard
+                    icon={MessageSquare}
+                    label="Последних сессий"
+                    value={desktopStats.total}
+                  />
+                  <StatCard
+                    icon={Clock}
+                    label="Среднее время ответа"
+                    value={seconds(desktopStats.avg_response_ms)}
+                  />
+                </section>
+              </Fade>
 
-              <section className={styles.downloadCard} aria-label="Скачать приложение">
-                <div className={styles.downloadIcon} aria-hidden="true"><IconDownload /></div>
-                <div className={styles.downloadText}>
-                  <span className={styles.downloadTitle}>Desktop-приложение</span>
-                  <span className={styles.downloadSub}>Работайте офлайн и получите доступ к расширенным функциям</span>
-                </div>
-                <DownloadDropdown align="right" trigger={<button className={styles.downloadBtn} type="button">Скачать</button>} />
-              </section>
+              <Fade delay={0.12}>
+                <section>
+                  <SectionHead
+                    title="Последние сессии"
+                    action={
+                      <button
+                        className={styles.linkBtn}
+                        onClick={() => handleNavClick("sessions")}
+                        type="button"
+                      >
+                        Все сессии
+                        <ArrowUpRight size={14} strokeWidth={2.2} />
+                      </button>
+                    }
+                  />
+                  {desktopSessions.length === 0 ? (
+                    <EmptyState
+                      icon={MessageSquare}
+                      title="Сессий пока нет"
+                      text="Запустите приложение и задайте первый вопрос — записи появятся здесь."
+                    />
+                  ) : (
+                    <div className={styles.table}>
+                      <TableHead />
+                      {desktopSessions.slice(0, 5).map((s) => (
+                        <SessionRow key={s.id} session={s} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </Fade>
             </>
           )}
 
-          {/* ─── SESSIONS ─── */}
           {activeNav === "sessions" && (
             <>
-              <div className={styles.sectionHeader}>
-                <div className={styles.filterRow}>
-                  {[
-                    { key: "all",             label: "Все" },
-                    { key: "chat_message",    label: "Чат" },
-                    { key: "live_answer",     label: "Голос" },
-                    { key: "screen_analysis", label: "Скриншот" },
-                  ].map((f) => (
-                    <button
-                      key={f.key}
-                      type="button"
-                      className={`${styles.filterBtn} ${sessionFilter === f.key ? styles.filterBtnActive : ""}`}
-                      onClick={() => { setSessionFilter(f.key); setAllSessions([]); setSessionsOffset(0); setExpandedSession(null); loadSessions(f.key, 0); }}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
+              <Fade>
+                <div className={styles.toolbar}>
+                  <div className={styles.filters}>
+                    {[
+                      { key: "all", label: "Все" },
+                      { key: "chat_message", label: "Чат" },
+                      { key: "live_answer", label: "Голос" },
+                      { key: "screen_analysis", label: "Экран" },
+                    ].map((f) => {
+                      const active = sessionFilter === f.key;
+                      return (
+                        <button
+                          key={f.key}
+                          type="button"
+                          className={`${styles.filter} ${active ? styles.filterActive : ""}`}
+                          onClick={() => {
+                            setSessionFilter(f.key);
+                            setAllSessions([]);
+                            setSessionsOffset(0);
+                            setExpandedSession(null);
+                            loadSessions(f.key, 0);
+                          }}
+                        >
+                          {active && (
+                            <motion.span
+                              layoutId="filterActive"
+                              className={styles.filterBg}
+                              transition={{ duration: 0.26, ease: EASE }}
+                            />
+                          )}
+                          <span>{f.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className={styles.counter}>{allSessions.length} записей</span>
                 </div>
-                <span className={styles.tableCellMuted}>{allSessions.length} записей</span>
-              </div>
+              </Fade>
 
-              {sessionsLoading && allSessions.length === 0 ? (
-                <div className={styles.emptyState}>Загрузка…</div>
-              ) : allSessions.length === 0 ? (
-                <div className={styles.emptyState}>Нет сессий. Запустите desktop-приложение.</div>
-              ) : (
-                <div className={styles.sessionsTable}>
-                  <div className={styles.sessionsTableHead}><span>Тип</span><span>Вопрос</span><span>Ответ</span><span>Модель</span><span>Время</span><span>Дата</span></div>
-                  {allSessions.map((s) => (
-                    <>
-                      <div
+              <Fade delay={0.06}>
+                {sessionsLoading && allSessions.length === 0 ? (
+                  <div className={styles.loadingBox}>
+                    <Loader2 size={18} className={styles.spinner} />
+                    Загружаем сессии…
+                  </div>
+                ) : allSessions.length === 0 ? (
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="Ничего не найдено"
+                    text="По выбранному фильтру записей нет. Попробуйте другой тип сессии."
+                  />
+                ) : (
+                  <div className={styles.table}>
+                    <TableHead />
+                    {allSessions.map((s) => (
+                      <SessionRow
                         key={s.id}
-                        className={styles.sessionsTableRow}
-                        onClick={() => setExpandedSession(expandedSession === s.id ? null : s.id)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <span className={styles.desktopTypeIcon}><SessionTypeIcon type={s.type} /></span>
-                        <span className={styles.tableCell} title={s.question ?? ""}>{s.question ? s.question.slice(0, 60) + (s.question.length > 60 ? "…" : "") : "—"}</span>
-                        <span className={styles.tableCell} title={s.answer ?? ""}>{s.answer ? s.answer.slice(0, 80) + (s.answer.length > 80 ? "…" : "") : "—"}</span>
-                        <span className={styles.tableCellMono}>{s.model?.split("/").pop()?.split(":")[0] ?? "—"}</span>
-                        <span className={styles.tableCellMono}>{s.response_time_ms ? `${(s.response_time_ms / 1000).toFixed(1)}с` : "—"}</span>
-                        <span className={styles.tableCellMuted}>{new Date(s.created_at).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                      </div>
-                      {expandedSession === s.id && (
-                        <div key={`exp-${s.id}`} style={{ padding: "14px 16px", background: "var(--bg-tertiary)", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
-                          {s.question && <><strong style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>Вопрос</strong><p style={{ marginTop: 6, color: "var(--text-secondary)", lineHeight: 1.6 }}>{s.question}</p></>}
-                          {s.answer && <><strong style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 12, display: "block" }}>Ответ</strong><p style={{ marginTop: 6, color: "var(--text-secondary)", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{s.answer}</p></>}
-                        </div>
-                      )}
-                    </>
-                  ))}
-                </div>
-              )}
+                        session={s}
+                        expandable
+                        expanded={expandedSession === s.id}
+                        onToggle={() =>
+                          setExpandedSession(expandedSession === s.id ? null : s.id)
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
+              </Fade>
 
               {sessionsHasMore && (
                 <button
-                  className={styles.downloadBtn}
-                  style={{ alignSelf: "center", marginTop: 4 }}
+                  className={styles.loadMore}
                   onClick={() => loadSessions(sessionFilter, sessionsOffset, true)}
                   disabled={sessionsLoading}
+                  type="button"
                 >
-                  {sessionsLoading ? "Загрузка…" : "Загрузить ещё"}
+                  {sessionsLoading ? (
+                    <Loader2 size={15} className={styles.spinner} />
+                  ) : (
+                    <ChevronDown size={15} strokeWidth={2.2} />
+                  )}
+                  Загрузить ещё
                 </button>
               )}
             </>
           )}
 
-          {/* ─── ANALYTICS ─── */}
-          {activeNav === "analytics" && (
-            analyticsLoading || !analytics ? (
-              <div className={styles.emptyState}>Загрузка аналитики…</div>
+          {activeNav === "analytics" &&
+            (analyticsLoading || !analytics ? (
+              <div className={styles.loadingBox}>
+                <Loader2 size={18} className={styles.spinner} />
+                Считаем аналитику…
+              </div>
             ) : (
               <>
-                <section className={styles.statsRow}>
-                  {[
-                    { label: "Всего сессий",    value: analytics.total },
-                    { label: "Сегодня",         value: analytics.today },
-                    { label: "За 7 дней",       value: analytics.last_7d },
-                    { label: "Среднее время",   value: analytics.avg_ms ? `${(analytics.avg_ms / 1000).toFixed(1)}с` : "—" },
-                  ].map((s) => (
-                    <div key={s.label} className={styles.statCard}>
-                      <span className={styles.statLabel}>{s.label}</span>
-                      <span className={styles.statValue}>{s.value}</span>
-                    </div>
-                  ))}
-                </section>
+                <Fade>
+                  <section className={styles.statsRow}>
+                    <StatCard icon={Activity} label="Всего сессий" value={analytics.total} />
+                    <StatCard icon={CalendarDays} label="Сегодня" value={analytics.today} />
+                    <StatCard icon={TrendingUp} label="За 7 дней" value={analytics.last_7d} />
+                    <StatCard
+                      icon={Clock}
+                      label="Среднее время"
+                      value={seconds(analytics.avg_ms)}
+                    />
+                  </section>
+                </Fade>
 
                 {analytics.by_day.length > 0 && (
-                  <section className={styles.recentSection}>
-                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Сессии за 14 дней</h3></div>
-                    <div className={styles.chartCard}>
-                      <div className={styles.barChart}>
-                        {(() => {
-                          const max = Math.max(...analytics.by_day.map(d => d.count), 1);
-                          return analytics.by_day.map((d) => (
-                            <div key={d.date} className={styles.barCol}>
-                              <div className={styles.bar} style={{ height: `${Math.max((d.count / max) * 100, 5)}%` }} title={`${d.count}`} />
-                              <span className={styles.barLabel}>{d.date}</span>
-                            </div>
-                          ));
-                        })()}
+                  <Fade delay={0.06}>
+                    <section>
+                      <SectionHead title="Сессии за 14 дней" />
+                      <div className={styles.panel}>
+                        <div className={styles.chart}>
+                          {(() => {
+                            const max = Math.max(...analytics.by_day.map((d) => d.count), 1);
+                            return analytics.by_day.map((d, i) => (
+                              <div key={d.date} className={styles.chartCol}>
+                                <span className={styles.chartValue}>{d.count}</span>
+                                <motion.span
+                                  className={styles.chartBar}
+                                  initial={{ height: "2%" }}
+                                  animate={{
+                                    height: `${Math.max((d.count / max) * 100, 4)}%`,
+                                  }}
+                                  transition={{
+                                    duration: 0.6,
+                                    delay: i * 0.04,
+                                    ease: EASE,
+                                  }}
+                                />
+                                <span className={styles.chartLabel}>{d.date}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
                       </div>
-                    </div>
-                  </section>
+                    </section>
+                  </Fade>
                 )}
 
                 {analytics.by_type.length > 0 && (
-                  <section className={styles.recentSection}>
-                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>По типу</h3></div>
-                    <div className={styles.settingsCard}>
-                      {analytics.by_type.map((t) => {
-                        const pct = analytics.total ? Math.round((t.count / analytics.total) * 100) : 0;
-                        const label = t.type === "chat_message" ? "Чат" : t.type === "live_answer" ? "Голосовой ответ" : t.type === "screen_analysis" ? "Анализ экрана" : t.type;
-                        return (
-                          <div key={t.type} className={styles.typeBarRow}>
-                            <span className={styles.typeBarLabel}>{label}</span>
-                            <div className={styles.typeBarTrack}><div className={styles.typeBarFill} style={{ width: `${pct}%` }} /></div>
-                            <span className={styles.typeBarValue}>{t.count} ({pct}%)</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
+                  <Fade delay={0.12}>
+                    <section>
+                      <SectionHead title="Распределение по типу" />
+                      <div className={styles.panel}>
+                        {analytics.by_type.map((t, i) => {
+                          const pct = analytics.total
+                            ? Math.round((t.count / analytics.total) * 100)
+                            : 0;
+                          const { label, icon: Icon } = typeMeta(t.type);
+                          return (
+                            <div key={t.type} className={styles.distRow}>
+                              <span className={styles.distLabel}>
+                                <Icon size={14} strokeWidth={1.9} />
+                                {label}
+                              </span>
+                              <span className={styles.distTrack}>
+                                <motion.span
+                                  className={styles.distFill}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${pct}%` }}
+                                  transition={{
+                                    duration: 0.7,
+                                    delay: 0.1 + i * 0.08,
+                                    ease: EASE,
+                                  }}
+                                />
+                              </span>
+                              <span className={styles.distValue}>
+                                {t.count}
+                                <span className={styles.distPct}>{pct}%</span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  </Fade>
                 )}
 
                 {analytics.top_models.length > 0 && (
-                  <section className={styles.recentSection}>
-                    <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Топ моделей</h3></div>
-                    <div className={styles.listRows}>
-                      {analytics.top_models.map((m, i) => (
-                        <div key={m.model} className={styles.listRow}>
-                          <span className={styles.modelRank}>{i + 1}</span>
-                          <span className={styles.modelName}>{m.model.split("/").pop()?.split(":")[0] ?? m.model}</span>
-                          <span className={styles.modelCount}>{m.count} сессий</span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                  <Fade delay={0.18}>
+                    <section>
+                      <SectionHead title="Топ моделей" />
+                      <div className={styles.panel}>
+                        {analytics.top_models.map((m, i) => (
+                          <div key={m.model} className={styles.modelRow}>
+                            <span className={styles.modelRank}>
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className={styles.modelIcon}>
+                              <Cpu size={14} strokeWidth={1.9} />
+                            </span>
+                            <span className={styles.modelName}>{shortModel(m.model)}</span>
+                            <span className={styles.modelCount}>{m.count} сессий</span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </Fade>
                 )}
               </>
-            )
-          )}
+            ))}
 
-          {/* ─── SETTINGS ─── */}
           {activeNav === "settings" && (
             <>
-              {/* Account overview */}
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Аккаунт</h3></div>
-                <div className={styles.settingsOverview}>
-                  <div className={styles.overviewCard}>
-                    <span className={styles.overviewLabel}>Тариф</span>
-                    <span className={`${styles.overviewValue} ${user?.plan === "pro" ? styles.overviewValuePro : ""}`}>
-                      {user?.plan === "pro" ? "Pro" : "Free"}
-                    </span>
-                  </div>
-                  <div className={styles.overviewCard}>
-                    <span className={styles.overviewLabel}>Подписка</span>
-                    <span className={styles.overviewValueSm}>
-                      {user?.plan === "pro"
-                        ? (user.pro_expires_at
-                            ? `до ${new Date(user.pro_expires_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}`
-                            : "Навсегда")
-                        : "Не активна"}
-                    </span>
-                  </div>
-                  <div className={styles.overviewCard}>
-                    <span className={styles.overviewLabel}>С нами с</span>
-                    <span className={styles.overviewValueSm}>
-                      {user?.created_at ? new Date(user.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : "—"}
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Profile */}
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Профиль</h3></div>
-                <div className={styles.settingsCard}>
-                  <div className={styles.profileHead}>
-                    <button className={styles.profileAvatarBtn} onClick={() => fileInputRef.current?.click()} title="Сменить аватар" type="button">
-                      {user?.avatar
-                        ? <Image src={user.avatar} alt="Аватар" width={64} height={64} className={styles.userAvatarImg} />
-                        : <span className={styles.profileAvatarInitial}>{user?.name?.charAt(0).toUpperCase() ?? "U"}</span>}
-                      <span className={styles.userAvatarOverlay}>
-                        {avatarUploading ? <span className={styles.avatarSpinner} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>}
+              <Fade>
+                <section className={styles.profilePanel}>
+                  <button
+                    className={styles.profileAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Сменить аватар"
+                    type="button"
+                  >
+                    {user?.avatar ? (
+                      <Image
+                        src={user.avatar}
+                        alt=""
+                        width={72}
+                        height={72}
+                        className={styles.avatarImg}
+                      />
+                    ) : (
+                      <span className={styles.profileInitial}>
+                        {user?.name?.charAt(0).toUpperCase() ?? "U"}
                       </span>
-                    </button>
-                    <div className={styles.profileIdentity}>
-                      <span className={styles.profileName}>{user?.name}</span>
-                      <span className={styles.profileEmail}>{user?.email}</span>
-                      <div className={styles.profileBadges}>
-                        <span className={`${styles.profilePlanBadge} ${user?.plan === "pro" ? styles.profilePlanBadgePro : ""}`}>
-                          {user?.plan === "pro" ? "Pro" : "Free"}
-                        </span>
-                        {user?.plan !== "pro" && <Link href="/#pricing" className={styles.upgradeLink}>Улучшить план →</Link>}
-                      </div>
-                    </div>
+                    )}
+                    <span className={styles.avatarOverlay}>
+                      {avatarUploading ? (
+                        <Loader2 size={16} className={styles.spinner} />
+                      ) : (
+                        <Plus size={16} strokeWidth={2.4} />
+                      )}
+                    </span>
+                  </button>
+
+                  <div className={styles.profileIdentity}>
+                    <span className={styles.profileName}>{user?.name}</span>
+                    <span className={styles.profileEmail}>{user?.email}</span>
+                  </div>
+
+                  <div className={styles.profileSide}>
+                    <span className={`${styles.plan} ${isPro ? styles.planPro : ""}`}>
+                      {isPro ? "Pro" : "Free"}
+                    </span>
                     {user?.avatar && (
-                      <button className={styles.removeAvatarBtn} onClick={handleAvatarRemove} type="button">Удалить фото</button>
+                      <button
+                        className={styles.dangerLink}
+                        onClick={handleAvatarRemove}
+                        type="button"
+                      >
+                        <Trash2 size={13} strokeWidth={2} />
+                        Удалить фото
+                      </button>
                     )}
                   </div>
+                </section>
+              </Fade>
 
-                  <div className={styles.settingsDivider} />
+              <Fade delay={0.06}>
+                <section className={styles.statsRow}>
+                  <StatCard
+                    icon={Sparkles}
+                    label="Тариф"
+                    value={isPro ? "Pro" : "Free"}
+                    hint={isPro ? "Полный доступ" : "Базовые возможности"}
+                  />
+                  <StatCard
+                    icon={CalendarDays}
+                    label="Подписка"
+                    value={
+                      isPro
+                        ? user?.pro_expires_at
+                          ? new Date(user.pro_expires_at).toLocaleDateString("ru-RU", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Навсегда"
+                        : "Не активна"
+                    }
+                  />
+                  <StatCard
+                    icon={UserIcon}
+                    label="С нами с"
+                    value={
+                      user?.created_at
+                        ? new Date(user.created_at).toLocaleDateString("ru-RU", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"
+                    }
+                  />
+                </section>
+              </Fade>
 
-                  <div className={styles.formGrid}>
-                    <div className={styles.inputWrapper}>
-                      <label className={styles.inputLabel}>Отображаемое имя</label>
-                      <input className={styles.roleInput} type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Ваше имя" />
+              <Fade delay={0.12}>
+                <section>
+                  <SectionHead title="Профиль" />
+                  <div className={styles.panel}>
+                    <div className={styles.formGrid}>
+                      <div className={styles.field}>
+                        <label className={styles.label} htmlFor="displayName">
+                          Отображаемое имя
+                        </label>
+                        <div className={styles.inputWrap}>
+                          <UserIcon size={15} strokeWidth={1.9} className={styles.inputIcon} />
+                          <input
+                            id="displayName"
+                            className={styles.input}
+                            type="text"
+                            value={profileName}
+                            onChange={(e) => setProfileName(e.target.value)}
+                            placeholder="Ваше имя"
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label} htmlFor="email">
+                          Email
+                        </label>
+                        <div className={styles.inputWrap}>
+                          <Mail size={15} strokeWidth={1.9} className={styles.inputIcon} />
+                          <input
+                            id="email"
+                            className={styles.input}
+                            type="email"
+                            value={user?.email ?? ""}
+                            readOnly
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.inputWrapper}>
-                      <label className={styles.inputLabel}>Email</label>
-                      <input className={styles.roleInput} type="email" value={user?.email ?? ""} readOnly />
-                    </div>
-                  </div>
-                  {profileError && <div className={`${styles.formMsg} ${styles.formMsgError}`}>{profileError}</div>}
-                  {profileMsg  && <div className={`${styles.formMsg} ${styles.formMsgOk}`}>{profileMsg}</div>}
-                  <div className={styles.formActions}>
-                    <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving}>
-                      {profileSaving ? "Сохранение…" : "Сохранить"}<IconArrow />
-                    </button>
-                  </div>
-                </div>
-              </section>
 
-              {/* Password */}
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Смена пароля</h3></div>
-                <div className={styles.settingsCard}>
-                  <div className={styles.formGrid}>
-                    <div className={styles.inputWrapper}>
-                      <label className={styles.inputLabel}>Текущий пароль</label>
-                      <input className={styles.roleInput} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" />
-                    </div>
-                    <div className={styles.inputWrapper}>
-                      <label className={styles.inputLabel}>Новый пароль</label>
-                      <input className={styles.roleInput} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Минимум 8 символов" />
+                    <AnimatePresence initial={false}>
+                      {(profileError || profileMsg) && (
+                        <motion.p
+                          className={profileError ? styles.msgError : styles.msgOk}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.24, ease: EASE }}
+                        >
+                          {!profileError && <Check size={14} strokeWidth={2.4} />}
+                          {profileError || profileMsg}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+
+                    <div className={styles.formActions}>
+                      <button
+                        className={styles.primaryBtn}
+                        onClick={handleProfileSave}
+                        disabled={profileSaving}
+                        type="button"
+                      >
+                        {profileSaving ? (
+                          <Loader2 size={15} className={styles.spinner} />
+                        ) : (
+                          <>
+                            Сохранить
+                            <ArrowRight size={15} strokeWidth={2.2} />
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
-                  <span className={styles.formNote}>Если аккаунт создан через Google, смена пароля недоступна.</span>
-                  <div className={styles.formActions}>
-                    <button className={styles.startBtn} onClick={handleProfileSave} disabled={profileSaving || !currentPassword || !newPassword}>
-                      {profileSaving ? "Сохранение…" : "Сменить пароль"}<IconArrow />
-                    </button>
+                </section>
+              </Fade>
+
+              <Fade delay={0.18}>
+                <section>
+                  <SectionHead title="Безопасность" />
+                  <div className={styles.panel}>
+                    <div className={styles.formGrid}>
+                      <div className={styles.field}>
+                        <label className={styles.label} htmlFor="currentPassword">
+                          Текущий пароль
+                        </label>
+                        <div className={styles.inputWrap}>
+                          <KeyRound size={15} strokeWidth={1.9} className={styles.inputIcon} />
+                          <input
+                            id="currentPassword"
+                            className={styles.input}
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="••••••••"
+                            autoComplete="current-password"
+                          />
+                        </div>
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label} htmlFor="newPassword">
+                          Новый пароль
+                        </label>
+                        <div className={styles.inputWrap}>
+                          <KeyRound size={15} strokeWidth={1.9} className={styles.inputIcon} />
+                          <input
+                            id="newPassword"
+                            className={styles.input}
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Минимум 8 символов"
+                            autoComplete="new-password"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className={styles.note}>
+                      Если аккаунт создан через Google, смена пароля недоступна.
+                    </p>
+
+                    <div className={styles.formActions}>
+                      <button
+                        className={styles.primaryBtn}
+                        onClick={handleProfileSave}
+                        disabled={profileSaving || !currentPassword || !newPassword}
+                        type="button"
+                      >
+                        {profileSaving ? (
+                          <Loader2 size={15} className={styles.spinner} />
+                        ) : (
+                          <>
+                            Сменить пароль
+                            <ArrowRight size={15} strokeWidth={2.2} />
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              </Fade>
             </>
           )}
 
-          {/* ─── HELP ─── */}
           {activeNav === "help" && (
             <>
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Начало работы</h3></div>
-                <div className={styles.settingsCard}>
-                  <p className={styles.quickStartDesc}>Скачайте desktop-приложение, войдите через браузер — сессия синхронизируется автоматически.</p>
-                  <DownloadDropdown align="left" trigger={<button className={styles.startBtn} type="button"><span>Скачать приложение</span><IconArrow /></button>} />
-                </div>
-              </section>
+              <Fade>
+                <section className={styles.hero}>
+                  <div className={styles.heroGlow} aria-hidden="true" />
+                  <div className={styles.heroText}>
+                    <span className={styles.heroEyebrow}>
+                      <Download size={12} strokeWidth={2.2} />
+                      Начало работы
+                    </span>
+                    <h2 className={styles.heroTitle}>Три шага до первой сессии</h2>
+                    <p className={styles.heroSub}>
+                      Скачайте приложение для Windows, войдите через браузер — сессия
+                      синхронизируется автоматически.
+                    </p>
+                  </div>
+                  <div className={styles.heroActions}>
+                    <DownloadDropdown
+                      align="left"
+                      trigger={
+                        <span className={styles.primaryBtn}>
+                          Скачать приложение
+                          <ArrowRight size={15} strokeWidth={2.2} />
+                        </span>
+                      }
+                    />
+                  </div>
+                </section>
+              </Fade>
 
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Горячие клавиши</h3></div>
-                <div className={styles.listRows}>
-                  {[
-                    { keys: ["⌘", "⇧", "I"], action: "Открыть / скрыть ассистента" },
-                    { keys: ["⌘", "⇧", "R"], action: "Начать новую сессию" },
-                    { keys: ["Esc"],           action: "Закрыть ассистент" },
-                    { keys: ["⌘", "Enter"],    action: "Отправить сообщение" },
-                    { keys: ["⌘", "⇧", "C"],   action: "Скопировать последний ответ" },
-                  ].map((s) => (
-                    <div key={s.action} className={styles.listRow}>
-                      <div className={styles.kbdGroup}>
-                        {s.keys.map((k) => <kbd key={k} className={styles.kbd}>{k}</kbd>)}
+              <Fade delay={0.06}>
+                <section>
+                  <SectionHead title="Горячие клавиши" />
+                  <div className={styles.panel}>
+                    {[
+                      { keys: ["Ctrl", "Shift", "I"], action: "Открыть / скрыть ассистента" },
+                      { keys: ["Ctrl", "Shift", "R"], action: "Начать новую сессию" },
+                      { keys: ["Esc"], action: "Закрыть ассистент" },
+                      { keys: ["Ctrl", "Enter"], action: "Отправить сообщение" },
+                      { keys: ["Ctrl", "Shift", "C"], action: "Скопировать последний ответ" },
+                    ].map((s) => (
+                      <div key={s.action} className={styles.hotkeyRow}>
+                        <span className={styles.kbdGroup}>
+                          {s.keys.map((k) => (
+                            <kbd key={k} className={styles.kbd}>
+                              {k}
+                            </kbd>
+                          ))}
+                        </span>
+                        <span className={styles.hotkeyAction}>{s.action}</span>
                       </div>
-                      <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{s.action}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                    ))}
+                  </div>
+                </section>
+              </Fade>
 
-              <section className={styles.recentSection}>
-                <div className={styles.sectionHeader}><h3 className={styles.sectionTitle}>Поддержка</h3></div>
-                <div className={styles.listRows}>
-                  {[
-                    { label: "Написать в поддержку", href: "mailto:support@interview.ai" },
-                    { label: "Сообщить об ошибке",   href: "https://github.com/GIZZN/diplom/issues" },
-                  ].map((l) => (
-                    <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className={styles.helpLink}>
-                      {l.label}<span className={styles.helpLinkArrow}>→</span>
-                    </a>
-                  ))}
-                </div>
-              </section>
+              <Fade delay={0.12}>
+                <section>
+                  <SectionHead title="Поддержка" />
+                  <div className={styles.linkGrid}>
+                    {[
+                      {
+                        icon: LifeBuoy,
+                        label: "Написать в поддержку",
+                        sub: "support@interview.ai",
+                        href: "mailto:support@interview.ai",
+                      },
+                      {
+                        icon: Bug,
+                        label: "Сообщить об ошибке",
+                        sub: "GitHub Issues",
+                        href: "https://github.com/GIZZN/diplom/issues",
+                      },
+                    ].map(({ icon: Icon, label, sub, href }) => (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.linkCard}
+                      >
+                        <span className={styles.linkIcon}>
+                          <Icon size={16} strokeWidth={1.9} />
+                        </span>
+                        <span className={styles.linkLabel}>{label}</span>
+                        <span className={styles.linkSub}>{sub}</span>
+                        <ArrowUpRight size={15} strokeWidth={2} className={styles.linkArrow} />
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              </Fade>
             </>
           )}
-
         </div>
       </main>
     </div>
