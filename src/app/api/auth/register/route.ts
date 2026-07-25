@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { hashPassword, signToken } from "@/lib/auth";
+import { REF_COOKIE, getVisitorId, logEvent, readAttribution } from "@/lib/attribution";
+import { applyReferral } from "@/lib/referral";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,13 +23,26 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
+    const attribution = readAttribution(req);
 
     const result = await pool.query(
-      "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, created_at",
-      [name.trim(), email.toLowerCase().trim(), passwordHash]
+      "INSERT INTO users (name, email, password_hash, signup_source) VALUES ($1, $2, $3, $4) RETURNING id, name, email, created_at",
+      [name.trim(), email.toLowerCase().trim(), passwordHash, attribution.source ?? null]
     );
 
     const user = result.rows[0];
+
+    const refCode = req.cookies.get(REF_COOKIE)?.value;
+    if (refCode) await applyReferral(user.id, refCode);
+
+    await logEvent({
+      event: "signup",
+      attribution,
+      visitor: getVisitorId(req),
+      userId: user.id,
+      referrer: req.headers.get("referer"),
+    });
+
     const token = signToken({ userId: user.id, email: user.email });
 
     const response = NextResponse.json({

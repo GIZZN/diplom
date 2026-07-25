@@ -8,7 +8,7 @@ const FILES = [
   {
     label: "Installer (.setup)",
     sub: "Установщик с ярлыком",
-    href: "/Interview Assistant_0.1.0_x64-setup.exe",
+    href: "/api/download?f=setup",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2v13M5 15l7 7 7-7" /><path d="M3 21h18" />
@@ -18,7 +18,7 @@ const FILES = [
   {
     label: "Portable (.exe)",
     sub: "Запуск без установки",
-    href: "/IntrviwAssistant.exe",
+    href: "/api/download?f=portable",
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 12h14M12 5l7 7-7 7" />

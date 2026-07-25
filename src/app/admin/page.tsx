@@ -20,6 +20,22 @@ interface Stats {
   users: { total_users: number; pro_users: number; new_last_7d: number };
 }
 
+interface TrafficSource {
+  source: string;
+  visits: number;
+  downloads: number;
+  signups: number;
+  paying: number;
+}
+
+interface Traffic {
+  days: number;
+  totals: { visits: number; downloads: number; signups: number };
+  byDay: { date: string; visits: number; downloads: number; signups: number }[];
+  referrals: { total: number; last_7d: number };
+  sources: TrafficSource[];
+}
+
 const PLAN_LABEL: Record<string, string> = {
   test: "Тест",
   monthly: "30 дней",
@@ -126,6 +142,7 @@ function AdminSkeleton() {
 export default function AdminPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [traffic, setTraffic] = useState<Traffic | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -140,6 +157,9 @@ export default function AdminPage() {
         return;
       }
       setStats(await res.json());
+
+      const trafficRes = await fetch("/api/admin/traffic");
+      if (trafficRes.ok) setTraffic(await trafficRes.json());
     } catch {
       setError("Ошибка загрузки");
     } finally {
@@ -208,6 +228,74 @@ export default function AdminPage() {
             </span>
           </div>
         </div>
+
+        {traffic && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionTitle}>
+                Трафик за {traffic.days} дней
+              </span>
+              <span className={styles.hint}>
+                Приглашений: {traffic.referrals.total} (за 7 дней:{" "}
+                {traffic.referrals.last_7d})
+              </span>
+            </div>
+
+            <div className={styles.statsRow}>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Уникальных заходов</span>
+                <span className={styles.statValue}>{traffic.totals.visits}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Скачиваний</span>
+                <span className={styles.statValue}>{traffic.totals.downloads}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Регистраций</span>
+                <span className={styles.statValue}>{traffic.totals.signups}</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Заход → скачивание</span>
+                <span className={styles.statValue}>
+                  {traffic.totals.visits
+                    ? Math.round(
+                        (traffic.totals.downloads / traffic.totals.visits) * 100,
+                      )
+                    : 0}
+                  %
+                </span>
+              </div>
+            </div>
+
+            {traffic.sources.length === 0 ? (
+              <p className={styles.hint}>
+                Событий пока нет. Раздайте ссылки с метками вида
+                {" "}<code>?utm_source=tg_chat</code> — здесь появится разбивка по каналам.
+              </p>
+            ) : (
+              <div className={styles.trafficTable}>
+                <div className={styles.trafficHead}>
+                  <span>Источник</span>
+                  <span>Заходы</span>
+                  <span>Скачали</span>
+                  <span>Регистрации</span>
+                  <span>Платящих</span>
+                </div>
+                {traffic.sources.map((s) => (
+                  <div key={s.source} className={styles.trafficRow}>
+                    <span className={styles.trafficSource}>{s.source}</span>
+                    <span>{s.visits}</span>
+                    <span>{s.downloads}</span>
+                    <span>{s.signups}</span>
+                    <span className={s.paying > 0 ? styles.trafficPaying : ""}>
+                      {s.paying}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className={styles.section}>
           <div className={styles.sectionHeader}>

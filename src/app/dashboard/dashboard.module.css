@@ -1234,6 +1234,31 @@
   margin-top: 18px;
 }
 
+/* ============ Приглашения ============ */
+.refRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.refLink {
+  flex: 1;
+  min-width: 220px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
 /* ============ Помощь ============ */
 .hotkeyRow {
   display: flex;

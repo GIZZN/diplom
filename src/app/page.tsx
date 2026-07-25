@@ -81,6 +81,10 @@ function IconStar({ size = 13 }: { size?: number; color?: string }) {
 }
 
 export default function Home() {
+  useEffect(() => {
+    fetch("/api/track/visit", { method: "POST" }).catch(() => {});
+  }, []);
+
   return (
     <div className={styles.page}>
       <Background />

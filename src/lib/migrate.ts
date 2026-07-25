@@ -124,6 +124,41 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS refresh_tokens_hash_idx   ON refresh_tokens (token_hash);
       CREATE INDEX IF NOT EXISTS refresh_tokens_family_idx ON refresh_tokens (family_id);
       CREATE INDEX IF NOT EXISTS refresh_tokens_user_idx   ON refresh_tokens (user_id);
+
+      -- ─── Атрибуция трафика ────────────────────────────────────────────────
+      -- Каждое событие воронки: заход на сайт, скачивание, регистрация.
+      -- Позволяет ответить "какой канал принёс платящих", а не только клики.
+      CREATE TABLE IF NOT EXISTS traffic_events (
+        id         SERIAL PRIMARY KEY,
+        event      VARCHAR(20) NOT NULL,      -- visit | download | signup
+        source     VARCHAR(60),               -- utm_source
+        medium     VARCHAR(60),               -- utm_medium
+        campaign   VARCHAR(60),               -- utm_campaign
+        variant    VARCHAR(60),               -- какой файл скачали / доп. контекст
+        user_id    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        visitor    VARCHAR(40),               -- анонимный id из cookie, склеивает воронку
+        referrer   TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS traffic_events_created_idx ON traffic_events (created_at DESC);
+      CREATE INDEX IF NOT EXISTS traffic_events_source_idx  ON traffic_events (source, event);
+      CREATE INDEX IF NOT EXISTS traffic_events_visitor_idx ON traffic_events (visitor);
+
+      -- ─── Рефералы ─────────────────────────────────────────────────────────
+      -- Код выдаётся каждому пользователю; за приглашённого оба получают Pro.
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS ref_code    VARCHAR(12) UNIQUE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS signup_source VARCHAR(60);
+
+      CREATE TABLE IF NOT EXISTS referral_rewards (
+        id          SERIAL PRIMARY KEY,
+        referrer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        invited_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        days        INTEGER NOT NULL,
+        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (invited_id)
+      );
+      CREATE INDEX IF NOT EXISTS referral_rewards_referrer_idx ON referral_rewards (referrer_id);
     `);
 
     console.log("✓ Migrations applied");

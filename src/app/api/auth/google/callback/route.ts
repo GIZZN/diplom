@@ -5,6 +5,8 @@ import pool from "@/lib/db";
 import { signToken, signPendingToken } from "@/lib/auth";
 import { generateOtpCode, createOtp, getClientIp, logAdminAction } from "@/lib/admin-auth";
 import { otpCodeEmail } from "@/lib/email-templates";
+import { REF_COOKIE, getVisitorId, logEvent, readAttribution } from "@/lib/attribution";
+import { applyReferral } from "@/lib/referral";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
@@ -110,10 +112,22 @@ export async function GET(req: NextRequest) {
     // Regular user: find or create, issue session
     let result = await pool.query("SELECT id, name, email FROM users WHERE email = $1", [email]);
     if (result.rows.length === 0) {
+      const attribution = readAttribution(req);
       result = await pool.query(
-        "INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, NULL, 'user') RETURNING id, name, email",
-        [name?.trim() || email.split("@")[0], email]
+        "INSERT INTO users (name, email, password_hash, role, signup_source) VALUES ($1, $2, NULL, 'user', $3) RETURNING id, name, email",
+        [name?.trim() || email.split("@")[0], email, attribution.source ?? null]
       );
+
+      const refCode = req.cookies.get(REF_COOKIE)?.value;
+      if (refCode) await applyReferral(result.rows[0].id, refCode);
+
+      await logEvent({
+        event: "signup",
+        attribution,
+        visitor: getVisitorId(req),
+        userId: result.rows[0].id,
+        variant: "google",
+      });
     }
 
     const user = result.rows[0];

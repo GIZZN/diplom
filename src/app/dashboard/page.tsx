@@ -15,8 +15,10 @@ import {
   Check,
   ChevronDown,
   Clock,
+  Copy,
   Cpu,
   Download,
+  Gift,
   HelpCircle,
   ImageIcon,
   KeyRound,
@@ -71,7 +73,14 @@ interface Analytics {
   top_models: { model: string; count: number }[];
 }
 
-type NavItem = "dashboard" | "sessions" | "analytics" | "settings" | "help";
+interface Referral {
+  code: string;
+  invited: number;
+  daysEarned: number;
+  bonusDays: number;
+}
+
+type NavItem = "dashboard" | "sessions" | "analytics" | "invite" | "settings" | "help";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -79,6 +88,7 @@ const NAV: { id: NavItem; label: string; icon: typeof LayoutGrid }[] = [
   { id: "dashboard", label: "Обзор", icon: LayoutGrid },
   { id: "sessions", label: "Сессии", icon: MessageSquare },
   { id: "analytics", label: "Аналитика", icon: BarChart3 },
+  { id: "invite", label: "Приглашения", icon: Gift },
   { id: "settings", label: "Настройки", icon: Settings },
   { id: "help", label: "Помощь", icon: HelpCircle },
 ];
@@ -87,6 +97,7 @@ const PAGE_META: Record<NavItem, { title: string; sub: string }> = {
   dashboard: { title: "Обзор", sub: "Сводка активности и быстрый доступ к приложению" },
   sessions: { title: "Сессии", sub: "История вопросов и ответов из desktop-приложения" },
   analytics: { title: "Аналитика", sub: "Динамика использования и распределение по типам" },
+  invite: { title: "Приглашения", sub: "Позовите друга — Pro на неделю получите оба" },
   settings: { title: "Настройки", sub: "Профиль, аккаунт и безопасность" },
   help: { title: "Помощь", sub: "Начало работы, горячие клавиши и поддержка" },
 };
@@ -350,6 +361,9 @@ export default function DashboardPage() {
   const [profileError, setProfileError] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
 
+  const [referral, setReferral] = useState<Referral | null>(null);
+  const [refCopied, setRefCopied] = useState(false);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -421,10 +435,30 @@ export default function DashboardPage() {
     }
   }
 
+  async function loadReferral() {
+    if (referral) return;
+    try {
+      const res = await fetch("/api/referral");
+      if (res.ok) setReferral(await res.json());
+    } catch {
+      // Блок приглашений не критичен — просто не покажем статистику.
+    }
+  }
+
   function handleNavClick(id: NavItem) {
     setActiveNav(id);
     if (id === "sessions" && allSessions.length === 0) loadSessions();
     if (id === "analytics") loadAnalytics();
+    if (id === "invite") loadReferral();
+  }
+
+  async function copyRefLink() {
+    if (!referral) return;
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/?ref=${referral.code}`,
+    );
+    setRefCopied(true);
+    setTimeout(() => setRefCopied(false), 2000);
   }
 
   async function handleLogout() {
@@ -924,6 +958,97 @@ export default function DashboardPage() {
                 )}
               </>
             ))}
+
+          {activeNav === "invite" && (
+            <>
+              <Fade>
+                <section className={styles.hero}>
+                  <div className={styles.heroGlow} aria-hidden="true" />
+                  <div className={styles.heroText}>
+                    <span className={styles.heroEyebrow}>
+                      <Gift size={12} strokeWidth={2.2} />
+                      Приглашения
+                    </span>
+                    <h2 className={styles.heroTitle}>
+                      Позовите друга — Pro получите оба
+                    </h2>
+                    <p className={styles.heroSub}>
+                      Отправьте свою ссылку. Как только по ней зарегистрируются,
+                      вам и другу начислится {referral?.bonusDays ?? 7} дней Pro.
+                      Количество приглашений не ограничено.
+                    </p>
+                  </div>
+                </section>
+              </Fade>
+
+              <Fade delay={0.06}>
+                <section>
+                  <SectionHead title="Ваша ссылка" />
+                  <div className={styles.panel}>
+                    {referral ? (
+                      <>
+                        <div className={styles.refRow}>
+                          <code className={styles.refLink}>
+                            {typeof window !== "undefined" ? window.location.origin : ""}
+                            /?ref={referral.code}
+                          </code>
+                          <button
+                            className={styles.primaryBtn}
+                            onClick={copyRefLink}
+                            type="button"
+                          >
+                            {refCopied ? (
+                              <>
+                                <Check size={15} strokeWidth={2.4} />
+                                Скопировано
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={15} strokeWidth={2} />
+                                Копировать
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className={styles.note}>
+                          Ссылка работает 30 дней с момента перехода — друг может
+                          зарегистрироваться не сразу.
+                        </p>
+                      </>
+                    ) : (
+                      <div className={styles.loadingBox}>
+                        <Loader2 size={18} className={styles.spinner} />
+                        Готовим ссылку…
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </Fade>
+
+              {referral && (
+                <Fade delay={0.12}>
+                  <section className={styles.statsRow}>
+                    <StatCard
+                      icon={UserIcon}
+                      label="Приглашено"
+                      value={referral.invited}
+                    />
+                    <StatCard
+                      icon={Sparkles}
+                      label="Заработано Pro"
+                      value={`${referral.daysEarned} дн.`}
+                    />
+                    <StatCard
+                      icon={Gift}
+                      label="За приглашение"
+                      value={`${referral.bonusDays} дн.`}
+                      hint="Обоим участникам"
+                    />
+                  </section>
+                </Fade>
+              )}
+            </>
+          )}
 
           {activeNav === "settings" && (
             <>
