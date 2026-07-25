@@ -9,31 +9,29 @@
 }
 
 .dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  z-index: 200;
-  min-width: 220px;
+  position: fixed;
+  z-index: 2147483647;
+  width: 220px;
   background: #111315;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 6px;
-  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.03) inset;
-  animation: fadeIn 0.12s ease;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  animation: dropIn 0.14s ease;
 }
 
-.left   { left: 0; }
-.right  { right: 0; }
-.center { left: 50%; transform: translateX(-50%); }
+.flipped {
+  animation: dropInUp 0.14s ease;
+}
 
-@keyframes fadeIn {
+@keyframes dropIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* center needs override because transform conflicts */
-.center.dropdown {
-  left: 50%;
-  transform: translateX(-50%);
+@keyframes dropInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .dropdownLabel {
