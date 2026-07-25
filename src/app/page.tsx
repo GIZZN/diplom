@@ -127,7 +127,7 @@ function Header() {
         <div className={styles.logoWrap}>
           <Logo size={24} />
           <span className={styles.logoName}>
-            interview<span className={styles.logoDot}>.</span>ai
+            Interview Assistant
           </span>
         </div>
         <nav className={styles.nav}>
