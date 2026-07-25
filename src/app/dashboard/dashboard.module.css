@@ -5,15 +5,16 @@
 
 .layout {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
   background: var(--bg-primary);
 }
 
 /* ============ Сайдбар ============ */
 .sidebar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  z-index: 30;
+  width: 264px;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -23,6 +24,7 @@
   background: linear-gradient(180deg, #0b1513 0%, var(--bg-secondary) 40%, var(--bg-primary) 100%);
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sidebarTop {
@@ -77,21 +79,31 @@
   color: var(--text-muted);
   text-align: left;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .navItem svg,
 .navItem span {
   position: relative;
   z-index: 1;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .navItem:hover {
   color: var(--text-secondary);
 }
 
+.navItem:hover svg {
+  transform: scale(1.12);
+}
+
 .navItemActive {
   color: var(--accent);
+}
+
+.navItemActive svg,
+.navItemActive span {
+  transform: translateX(2px);
 }
 
 .navActiveBg {
@@ -100,6 +112,20 @@
   border-radius: 9px;
   background: var(--accent-soft);
   border: 1px solid rgba(28, 221, 164, 0.18);
+  box-shadow: 0 6px 18px -10px var(--accent-glow);
+}
+
+.navActiveBg::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 18px;
+  border-radius: 100px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .sidebarBottom {
@@ -311,6 +337,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  margin-left: 264px;
 }
 
 .topBar {
@@ -325,6 +352,16 @@
   background: rgba(5, 6, 7, 0.72);
   backdrop-filter: blur(16px) saturate(160%);
   border-bottom: 1px solid var(--border);
+}
+
+.topBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
 }
 
 .pageTitle {
@@ -347,6 +384,7 @@
   padding: 32px 36px 72px;
   max-width: 1080px;
   width: 100%;
+  margin: 0 auto;
 }
 
 /* ============ Кнопки ============ */
@@ -1342,8 +1380,11 @@
 
 /* ============ Адаптив ============ */
 @media (max-width: 1080px) {
-  .layout {
-    grid-template-columns: 216px minmax(0, 1fr);
+  .sidebar {
+    width: 216px;
+  }
+  .main {
+    margin-left: 216px;
   }
   .topBar,
   .content {
@@ -1368,11 +1409,9 @@
 }
 
 @media (max-width: 760px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
   .sidebar {
-    position: static;
+    position: sticky;
+    width: auto;
     height: auto;
     flex-direction: row;
     align-items: center;
@@ -1381,6 +1420,10 @@
     border-right: none;
     border-bottom: 1px solid var(--border);
     overflow-x: auto;
+    overflow-y: visible;
+  }
+  .main {
+    margin-left: 0;
   }
   .sidebarTop {
     flex-direction: row;
@@ -1391,6 +1434,9 @@
     flex-direction: row;
   }
   .navItem span {
+    display: none;
+  }
+  .navActiveBg::before {
     display: none;
   }
   .upsell,
@@ -1406,7 +1452,8 @@
     grid-template-columns: auto auto;
     padding: 6px;
   }
-  .topBar {
+  .topBar,
+  .topBarInner {
     flex-direction: column;
     align-items: flex-start;
     gap: 14px;

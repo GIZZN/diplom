@@ -522,7 +522,7 @@ export default function DashboardPage() {
                     <motion.span
                       layoutId="navActive"
                       className={styles.navActiveBg}
-                      transition={{ duration: 0.28, ease: EASE }}
+                      transition={{ type: "spring", stiffness: 380, damping: 32, mass: 0.7 }}
                     />
                   )}
                   <Icon size={16} strokeWidth={1.9} />
@@ -609,19 +609,21 @@ export default function DashboardPage() {
 
       <main className={styles.main}>
         <header className={styles.topBar}>
-          <div>
-            <h1 className={styles.pageTitle}>{meta.title}</h1>
-            <p className={styles.pageSub}>{meta.sub}</p>
+          <div className={styles.topBarInner}>
+            <div>
+              <h1 className={styles.pageTitle}>{meta.title}</h1>
+              <p className={styles.pageSub}>{meta.sub}</p>
+            </div>
+            <DownloadDropdown
+              align="right"
+              trigger={
+                <span className={styles.primaryBtn}>
+                  <Download size={15} strokeWidth={2} />
+                  Скачать приложение
+                </span>
+              }
+            />
           </div>
-          <DownloadDropdown
-            align="right"
-            trigger={
-              <span className={styles.primaryBtn}>
-                <Download size={15} strokeWidth={2} />
-                Скачать приложение
-              </span>
-            }
-          />
         </header>
 
         <div className={styles.content}>
