@@ -46,7 +46,7 @@ export function otpCodeEmail(code: string, minutes = 5): string {
                       <td style="width:28px;height:28px;background:#ffffff;border-radius:7px;text-align:center;vertical-align:middle;">
                         <div style="width:12px;height:12px;background:#000000;border-radius:50%;margin:0 auto;"></div>
                       </td>
-                      <td style="padding-left:10px;font-size:15px;font-weight:600;color:${TEXT};letter-spacing:-0.01em;">interview.ai</td>
+                      <td style="padding-left:10px;font-size:15px;font-weight:600;color:${TEXT};letter-spacing:-0.01em;">Interview Assistant</td>
                     </tr></table>
                   </td>
                 </tr>
@@ -75,7 +75,7 @@ export function otpCodeEmail(code: string, minutes = 5): string {
               <div style="height:1px;background:${BORDER};margin:30px 0 0 0;"></div>
 
               <div style="margin-top:20px;font-size:12px;line-height:1.6;color:${FAINT};">
-                Это автоматическое письмо от interview.ai. Отвечать на него не нужно.
+                Это автоматическое письмо от Interview Assistant. Отвечать на него не нужно.
               </div>
 
             </td>
@@ -83,7 +83,7 @@ export function otpCodeEmail(code: string, minutes = 5): string {
         </table>
 
         <div style="margin-top:20px;font-size:11px;color:${FAINT};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-          © interview.ai
+          © Interview Assistant
         </div>
       </td>
     </tr>

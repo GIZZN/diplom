@@ -626,7 +626,7 @@ export default function AuthForm({
         </motion.div>
 
         <footer className={styles.footer}>
-          <span>© 2026 interview.ai</span>
+          <span>© 2026 Interview Assistant</span>
           <Link href="/privacy" className={styles.footerLink}>
             Конфиденциальность
           </Link>

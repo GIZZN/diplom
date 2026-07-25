@@ -283,7 +283,7 @@ function AppPreview() {
             <span />
           </div>
           <div className={styles.appTitle}>
-            <Logo size={12} /> interview.ai
+            <Logo size={12} /> Interview Assistant
           </div>
           <div className={styles.appTitleSpacer} />
         </div>
@@ -979,7 +979,7 @@ function Footer() {
         <div className={styles.footerTop}>
           <div className={styles.footerBrand}>
             <Logo size={22} />
-            <span>interview.ai</span>
+            <span>Interview Assistant</span>
           </div>
           <div className={styles.footerCols}>
             <div>
@@ -1002,7 +1002,7 @@ function Footer() {
           </div>
         </div>
         <div className={styles.footerBottom}>
-          <p>© 2026 interview.ai · Все права защищены</p>
+          <p>© 2026 Interview Assistant · Все права защищены</p>
           <div className={styles.socials}>
             <a href="#" aria-label="GitHub">
               GH

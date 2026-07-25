@@ -163,7 +163,7 @@ export default function CheckoutClient({ plan, email }: { plan: CheckoutPlan; em
 
           <div className={styles.brand}>
             <span className={styles.brandMark}><span /></span>
-            <span className={styles.brandName}>interview.ai</span>
+            <span className={styles.brandName}>Interview Assistant</span>
           </div>
 
           <div className={styles.kicker}>{ready ? plan.kicker : <span className={styles.sk} style={{ display: "inline-block", width: 120, height: 13 }} />}</div>

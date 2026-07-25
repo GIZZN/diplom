@@ -33,7 +33,7 @@ export default function LegalShell({
       <nav className={styles.nav}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
-            <Logo /> interview.ai
+            <Logo /> Interview Assistant
           </Link>
           <Link href="/" className={styles.backLink}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
@@ -64,7 +64,7 @@ export default function LegalShell({
         </Link>
       </main>
 
-      <footer className={styles.foot}>© 2026 interview.ai · Все права защищены</footer>
+      <footer className={styles.foot}>© 2026 Interview Assistant · Все права защищены</footer>
     </div>
   );
 }

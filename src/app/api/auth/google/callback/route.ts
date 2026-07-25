@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
       const otpId = await createOtp(user.id, otpCode);
 
       await resend.emails.send({
-        from: "interview.ai <onboarding@resend.dev>",
+        from: "Interview Assistant <onboarding@resend.dev>",
         to: email,
         subject: `Код входа: ${otpCode}`,
         text: `Код подтверждения: ${otpCode}\n\nДействует 5 минут.`,

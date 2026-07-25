@@ -83,7 +83,7 @@ function AdminSkeleton() {
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <Logo />
-          <span className={styles.logoText}>interview.ai</span>
+          <span className={styles.logoText}>Interview Assistant</span>
           <span className={styles.badge}>Admin</span>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function AdminPage() {
       <div className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <Logo />
-          <span className={styles.logoText}>interview.ai</span>
+          <span className={styles.logoText}>Interview Assistant</span>
           <span className={styles.badge}>Admin</span>
         </div>
         <button className={styles.logoutBtn} onClick={handleLogout}>

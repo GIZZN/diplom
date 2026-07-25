@@ -138,7 +138,7 @@ function AppAuthContent() {
         <Logo />
         <h1 className={styles.title}>Авторизация приложения</h1>
         <p className={styles.subtitle}>
-          Приложение <strong>interview.ai</strong> запрашивает доступ к вашему аккаунту.
+          Приложение <strong>Interview Assistant</strong> запрашивает доступ к вашему аккаунту.
         </p>
 
         <div className={styles.userRow}>

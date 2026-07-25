@@ -3,8 +3,8 @@ import LegalShell from "../legal/LegalShell";
 import styles from "../legal/legal.module.css";
 
 export const metadata: Metadata = {
-  title: "Политика конфиденциальности — interview.ai",
-  description: "Политика в отношении обработки персональных данных пользователей сервиса interview.ai в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».",
+  title: "Политика конфиденциальности — Interview Assistant",
+  description: "Политика в отношении обработки персональных данных пользователей сервиса Interview Assistant, в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».",
 };
 
 const CONTACT_EMAIL = "support@interview.ai";
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <div className={styles.notice}>
         Настоящая Политика разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ
         «О персональных данных» и определяет порядок обработки и защиты персональных данных
-        пользователей сервиса interview.ai (далее — «Сервис»).
+        пользователей сервиса Interview Assistant (далее — «Сервис»).
       </div>
 
       <h2>1. Общие положения</h2>

@@ -9,7 +9,7 @@ const PLANS: Record<"monthly" | "lifetime", CheckoutPlan> = {
     title: "Pro — 30 дней",
     description: "Доступ ко всем возможностям Pro на 30 дней",
     price: 500,
-    kicker: "Подписка interview.ai Pro",
+    kicker: "Подписка Interview Assistant Pro",
     period: "за 30 дней · продление вручную",
     features: [
       "Безлимитные сессии",
@@ -24,7 +24,7 @@ const PLANS: Record<"monthly" | "lifetime", CheckoutPlan> = {
     title: "Pro — навсегда",
     description: "Разовый платёж — пожизненный доступ к Pro",
     price: 2000,
-    kicker: "interview.ai Pro · Lifetime",
+    kicker: "Interview Assistant Pro · Lifetime",
     period: "разовый платёж · без продлений",
     features: [
       "Всё из подписки Pro",

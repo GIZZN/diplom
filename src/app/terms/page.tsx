@@ -3,8 +3,8 @@ import LegalShell from "../legal/LegalShell";
 import styles from "../legal/legal.module.css";
 
 export const metadata: Metadata = {
-  title: "Пользовательское соглашение — interview.ai",
-  description: "Условия использования сервиса interview.ai и публичная оферта на предоставление доступа к тарифу Pro в соответствии с законодательством Российской Федерации.",
+  title: "Пользовательское соглашение — Interview Assistant",
+  description: "Условия использования сервиса Interview Assistant и публичная оферта на предоставление доступа к тарифу Pro в соответствии с законодательством Российской Федерации.",
 };
 
 const CONTACT_EMAIL = "support@interview.ai";
@@ -24,7 +24,7 @@ export default function TermsPage() {
 
       <h2>1. Термины</h2>
       <ul>
-        <li><strong>Сервис</strong> — программное обеспечение и веб-сайт interview.ai, включая desktop-приложение и связанные API.</li>
+        <li><strong>Сервис</strong> — программное обеспечение и веб-сайт Interview Assistant, включая desktop-приложение и связанные API.</li>
         <li><strong>Администрация</strong> — <span className={styles.placeholder}>[наименование/ФИО]</span>, ИНН <span className={styles.placeholder}>[ИНН]</span>, ОГРН/ОГРНИП <span className={styles.placeholder}>[ОГРН]</span>, предоставляющая доступ к Сервису.</li>
         <li><strong>Пользователь</strong> — физическое лицо, использующее Сервис.</li>
         <li><strong>Тариф Pro</strong> — платный доступ к расширенным возможностям Сервиса.</li>
