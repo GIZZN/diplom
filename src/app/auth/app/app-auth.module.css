@@ -23,6 +23,15 @@
   border-right: 1px solid var(--border);
 }
 
+.brandPaths {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  pointer-events: none;
+  mask-image: radial-gradient(120% 100% at 30% 40%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(120% 100% at 30% 40%, #000 20%, transparent 78%);
+}
+
 .brandGlow {
   position: absolute;
   left: -12%;
@@ -32,18 +41,6 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgba(28, 221, 164, 0.14) 0%, transparent 62%);
   filter: blur(60px);
-  pointer-events: none;
-}
-
-.brandGrid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 52px 52px;
-  mask-image: radial-gradient(115% 95% at 25% 35%, #000 15%, transparent 75%);
-  -webkit-mask-image: radial-gradient(115% 95% at 25% 35%, #000 15%, transparent 75%);
   pointer-events: none;
 }
 
@@ -70,7 +67,7 @@
 
 .brandBody {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
 }
 
 .brandTitle {
@@ -79,41 +76,169 @@
   line-height: 1.15;
   letter-spacing: -0.03em;
   color: var(--text-primary);
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .brandTitleMuted {
   color: var(--text-muted);
 }
 
-.brandList {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 0;
-  list-style: none;
+/* ---- Мокап окна приложения ---- */
+.mock {
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(10, 11, 13, 0.7);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.9);
 }
 
-.brandItem {
+.mockBar {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--text-secondary);
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border);
 }
 
-.brandItemIcon {
+.mockDots {
+  display: flex;
+  gap: 5px;
+}
+
+.mockDots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-hover);
+}
+
+.mockTitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+
+.mockOnline {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  background: var(--accent-soft);
-  border: 1px solid rgba(28, 221, 164, 0.18);
+  gap: 5px;
+  font-size: 10px;
   color: var(--accent);
+}
+
+.mockOnline i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.mockBody {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  min-height: 208px;
+}
+
+.mockSide {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--border);
+}
+
+.mockSideItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mockSideItemActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.mockChat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px;
+}
+
+.mockMsg {
+  max-width: 88%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+.mockMsgUser {
+  align-self: flex-end;
+  color: var(--text-primary);
+  background: var(--accent-soft);
+  border-color: rgba(28, 221, 164, 0.22);
+}
+
+.mockTyping {
+  display: flex;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+.mockTyping span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+.mockTyping span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.mockTyping span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 60%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.brandHint {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.brandHint svg {
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .brandFoot {
@@ -155,13 +280,12 @@
   max-width: 380px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
+  gap: 16px;
 }
 
 /* ---- Шапка ---- */
 .head {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .headIcon {
@@ -193,7 +317,7 @@
 
 .subtitle {
   font-size: 14px;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--text-muted);
 }
 
@@ -208,10 +332,8 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 56px 24px;
-  border-radius: 14px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  padding: 64px 24px;
+  text-align: center;
 }
 
 .stateBox svg {
@@ -241,6 +363,16 @@
 }
 
 /* ---- Успех ---- */
+.cardCenter {
+  align-items: center;
+  text-align: center;
+}
+
+.cardCenter .userRow,
+.cardCenter .primaryBtn {
+  width: 100%;
+}
+
 .successIcon {
   display: inline-flex;
   align-items: center;
@@ -251,7 +383,6 @@
   background: var(--accent-soft);
   border: 1px solid rgba(28, 221, 164, 0.3);
   color: var(--accent);
-  margin-bottom: 6px;
   box-shadow: 0 14px 40px -14px var(--accent-glow);
 }
 

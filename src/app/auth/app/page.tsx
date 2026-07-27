@@ -21,6 +21,7 @@ import {
   Timer,
 } from "lucide-react";
 import styles from "./app-auth.module.css";
+import BackgroundPaths from "../../bg/BackgroundPaths";
 
 type State = "loading" | "confirm" | "success" | "error" | "not-logged-in";
 
@@ -32,10 +33,17 @@ const PERMISSIONS = [
   { icon: Sparkles, label: "ИИ-ассистент", sub: "Подсказки во время интервью" },
 ];
 
-const BRAND_POINTS = [
-  { icon: ShieldOff, text: "Окно не попадает в скриншоты и запись экрана" },
-  { icon: Keyboard, text: "Управление горячими клавишами" },
-  { icon: Timer, text: "Токен доступа действует 10 минут" },
+const CHAT = [
+  { from: "ai" as const, text: "Готов помочь. Укажите роль и технологии." },
+  { from: "user" as const, text: "Frontend разработчик, React + TypeScript" },
+  { from: "ai" as const, text: "Отлично. Начнём с virtual DOM — как он работает?" },
+];
+
+const SIDEBAR = [
+  { icon: MessageSquare, label: "Чат" },
+  { icon: Keyboard, label: "Горячие клавиши" },
+  { icon: ShieldOff, label: "Скрытность" },
+  { icon: BarChart3, label: "Аналитика" },
 ];
 
 function Logo({ size = 26 }: { size?: number }) {
@@ -50,8 +58,10 @@ function Logo({ size = 26 }: { size?: number }) {
 function BrandPanel() {
   return (
     <aside className={styles.brand}>
+      <div className={styles.brandPaths} aria-hidden="true">
+        <BackgroundPaths />
+      </div>
       <div className={styles.brandGlow} aria-hidden="true" />
-      <div className={styles.brandGrid} aria-hidden="true" />
 
       <Link href="/" className={styles.brandLogo}>
         <Logo />
@@ -67,27 +77,74 @@ function BrandPanel() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE }}
         >
-          Подключение
+          Один шаг —
           <br />
-          <span className={styles.brandTitleMuted}>приложения.</span>
+          <span className={styles.brandTitleMuted}>и всё готово.</span>
         </motion.h2>
 
-        <ul className={styles.brandList}>
-          {BRAND_POINTS.map(({ icon: Icon, text }, i) => (
-            <motion.li
-              key={text}
-              className={styles.brandItem}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.45, delay: 0.15 + i * 0.09, ease: EASE }}
-            >
-              <span className={styles.brandItemIcon}>
-                <Icon size={14} strokeWidth={1.9} />
-              </span>
-              {text}
-            </motion.li>
-          ))}
-        </ul>
+        <motion.div
+          className={styles.mock}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.12, ease: EASE }}
+          aria-hidden="true"
+        >
+          <div className={styles.mockBar}>
+            <span className={styles.mockDots}>
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className={styles.mockTitle}>Интервью-ассистент</span>
+            <span className={styles.mockOnline}>
+              <i />
+              Онлайн
+            </span>
+          </div>
+
+          <div className={styles.mockBody}>
+            <nav className={styles.mockSide}>
+              {SIDEBAR.map(({ icon: Icon, label }, i) => (
+                <span
+                  key={label}
+                  className={`${styles.mockSideItem} ${i === 0 ? styles.mockSideItemActive : ""}`}
+                >
+                  <Icon size={13} strokeWidth={1.9} />
+                  {label}
+                </span>
+              ))}
+            </nav>
+
+            <div className={styles.mockChat}>
+              {CHAT.map((m, i) => (
+                <motion.div
+                  key={m.text}
+                  className={`${styles.mockMsg} ${m.from === "user" ? styles.mockMsgUser : ""}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 + i * 0.28, ease: EASE }}
+                >
+                  {m.text}
+                </motion.div>
+              ))}
+              <motion.div
+                className={styles.mockTyping}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 1.3 }}
+              >
+                <span />
+                <span />
+                <span />
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className={styles.brandHint}>
+          <ShieldOff size={14} strokeWidth={1.9} />
+          Окно не попадает в скриншоты и запись экрана
+        </div>
       </div>
 
       <p className={styles.brandFoot}>Нативное приложение для Windows 10/11</p>
@@ -95,7 +152,13 @@ function BrandPanel() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  center = false,
+}: {
+  children: React.ReactNode;
+  center?: boolean;
+}) {
   return (
     <div className={styles.shell}>
       <BrandPanel />
@@ -108,7 +171,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <motion.div
-          className={styles.card}
+          className={`${styles.card} ${center ? styles.cardCenter : ""}`}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: EASE }}
@@ -266,7 +329,7 @@ function AppAuthContent() {
 
   if (state === "success") {
     return (
-      <Shell>
+      <Shell center>
         <motion.span
           className={styles.successIcon}
           initial={{ scale: 0.7, opacity: 0 }}
@@ -275,10 +338,12 @@ function AppAuthContent() {
         >
           <Check size={26} strokeWidth={2.6} />
         </motion.span>
-        <h1 className={styles.title}>Приложение подключено</h1>
-        <p className={styles.subtitle}>
-          Доступ выдан. Вернитесь в приложение — эту вкладку можно закрыть.
-        </p>
+        <div>
+          <h1 className={styles.title}>Приложение подключено</h1>
+          <p className={styles.subtitle}>
+            Доступ выдан. Вернитесь в приложение — эту вкладку можно закрыть.
+          </p>
+        </div>
         {user && (
           <div className={styles.userRow}>
             <span className={styles.userAvatar}>
